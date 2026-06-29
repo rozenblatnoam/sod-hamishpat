@@ -1,0 +1,23 @@
+{
+  "name": "dyanim-tzeirim",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "apps/backend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "mobile": "yarn workspace @dyanim/mobile start",
+    "backend": "yarn workspace @dyanim/backend start:dev",
+    "backend:build": "yarn workspace @dyanim/backend build",
+    "db:migrate": "yarn workspace @dyanim/backend migration:run"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "^56.0.15",
+    "expo": "~54.0.0"
+  },
+  "overrides": {
+    "@types/react": "~19.1.10"
+  }
+}

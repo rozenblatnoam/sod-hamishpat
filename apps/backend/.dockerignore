@@ -1,0 +1,8 @@
+node_modules
+src
+*.md
+.env
+.env.*
+!.env.example
+tsconfig.json
+nest-cli.json

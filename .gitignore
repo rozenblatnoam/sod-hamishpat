@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.local
+*.local
+.expo/
+.DS_Store
+*.log
+coverage/
+scorm-package/
+standalone-package/
+apps/scorm-web/dist/
+apps/scorm-web/public/videos/
+apps/mobile/assets/videos/
+apps/mobile/assets/*.mp4
+apps/mobile/assets/*.mov
+
+# Keep backend dist (needed for Docker deployment)
+!apps/backend/dist/
