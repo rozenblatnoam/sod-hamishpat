@@ -21,17 +21,28 @@ import { AdminModule } from './admin/admin.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get('DB_USER', 'postgres'),
-        password: config.get('DB_PASS', 'postgres'),
-        database: config.get('DB_NAME', 'dyanim'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
-        logging: config.get('NODE_ENV') === 'development',
-      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useFactory: ((config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        const base = {
+          type: 'postgres' as const,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
+          logging: config.get('NODE_ENV') === 'development',
+          ssl: databaseUrl ? { rejectUnauthorized: false } : false,
+        };
+        if (databaseUrl) {
+          return { ...base, url: databaseUrl };
+        }
+        return {
+          ...base,
+          host: config.get<string>('DB_HOST', 'localhost'),
+          port: config.get<number>('DB_PORT', 5432),
+          username: config.get<string>('DB_USER', 'postgres'),
+          password: config.get<string>('DB_PASS', 'postgres'),
+          database: config.get<string>('DB_NAME', 'dyanim'),
+        };
+      }) as any,
     }),
     AuthModule,
     UsersModule,

@@ -33,16 +33,26 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
-                useFactory: (config) => ({
-                    type: 'postgres',
-                    host: config.get('DB_HOST', 'localhost'),
-                    port: config.get('DB_PORT', 5432),
-                    username: config.get('DB_USER', 'postgres'),
-                    password: config.get('DB_PASS', 'postgres'),
-                    database: config.get('DB_NAME', 'dyanim'),
-                    entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                    synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
-                    logging: config.get('NODE_ENV') === 'development',
+                useFactory: ((config) => {
+                    const databaseUrl = config.get('DATABASE_URL');
+                    const base = {
+                        type: 'postgres',
+                        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+                        synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
+                        logging: config.get('NODE_ENV') === 'development',
+                        ssl: databaseUrl ? { rejectUnauthorized: false } : false,
+                    };
+                    if (databaseUrl) {
+                        return { ...base, url: databaseUrl };
+                    }
+                    return {
+                        ...base,
+                        host: config.get('DB_HOST', 'localhost'),
+                        port: config.get('DB_PORT', 5432),
+                        username: config.get('DB_USER', 'postgres'),
+                        password: config.get('DB_PASS', 'postgres'),
+                        database: config.get('DB_NAME', 'dyanim'),
+                    };
                 }),
             }),
             auth_module_1.AuthModule,
