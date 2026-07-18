@@ -40,7 +40,10 @@ let CasesService = class CasesService {
         this.achievements = achievements;
     }
     findByLesson(lessonId) {
-        return this.cases.find({ where: { lessonId } });
+        return this.cases.find({
+            where: { lessonId },
+            select: { id: true, lessonId: true, title: true, scenario: true, createdAt: true },
+        });
     }
     async findOne(id) {
         const c = await this.cases.findOne({ where: { id } });

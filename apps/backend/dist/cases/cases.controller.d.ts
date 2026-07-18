@@ -8,7 +8,6 @@ export declare class CasesController {
     private cases;
     constructor(cases: CasesService);
     findByLesson(lessonId: string): Promise<import("./case.entity").Case[]>;
-    findOne(id: string): Promise<import("./case.entity").Case>;
     submitVerdict(id: string, dto: VerdictDto, user: any): Promise<{
         correct: boolean;
         explanation: string;

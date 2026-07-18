@@ -52,6 +52,24 @@ let ProgressService = class ProgressService {
         await this.progress.save(prog);
         return prog;
     }
+    async syncScorm(userId, data) {
+        const progRecords = await this.progress.find({ where: { userId } });
+        const uniqueCases = [...new Set(progRecords.flatMap((p) => p.completedQuestions ?? []))];
+        const uniqueRooms = [...new Set(progRecords.filter((p) => p.completedAt != null).map((p) => p.roomId))];
+        const hintsUsed = Math.max(0, Math.floor(data.hintsUsed ?? 0));
+        const baseScore = Math.min(100, Math.round((uniqueCases.length / constants_1.TOTAL_CASES) * 100));
+        const score = Math.max(0, baseScore - hintsUsed * constants_1.HINT_PENALTY);
+        await this.users.update(userId, {
+            scormProgress: {
+                completedCases: uniqueCases,
+                completedRooms: uniqueRooms,
+                score,
+                syncedAt: new Date().toISOString(),
+            },
+            score,
+        });
+        return { ok: true };
+    }
 };
 exports.ProgressService = ProgressService;
 exports.ProgressService = ProgressService = __decorate([

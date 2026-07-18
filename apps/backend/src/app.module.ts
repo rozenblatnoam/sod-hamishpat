@@ -27,7 +27,7 @@ import { AdminModule } from './admin/admin.module';
         const base = {
           type: 'postgres' as const,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
+          synchronize: config.get('NODE_ENV') === 'development',
           logging: config.get('NODE_ENV') === 'development',
           ssl: databaseUrl ? { rejectUnauthorized: false } : false,
         };

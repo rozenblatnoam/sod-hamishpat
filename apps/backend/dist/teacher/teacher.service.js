@@ -17,43 +17,40 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("../users/user.entity");
-const progress_entity_1 = require("../progress/progress.entity");
 const constants_1 = require("../shared/constants");
+const TOTAL_ROOMS = 6;
 let TeacherService = class TeacherService {
-    constructor(users, progress) {
+    constructor(users) {
         this.users = users;
-        this.progress = progress;
     }
     async getClassStats(teacher) {
         if (teacher.role !== 'teacher' && teacher.role !== 'admin') {
             throw new common_1.ForbiddenException('גישה לאזור מורה בלבד');
         }
-        const students = await this.users.find({
-            where: { school: teacher.school, role: 'student' },
-        });
-        const studentIds = students.map((s) => s.id);
-        const progressRecords = studentIds.length
-            ? await this.progress
-                .createQueryBuilder('p')
-                .where('p.userId IN (:...ids)', { ids: studentIds })
-                .getMany()
-            : [];
+        if (!teacher.school)
+            return { totalStudents: 0, avgScore: 0, avgCompletion: 0, students: [] };
+        const where = { school: teacher.school, role: 'student' };
+        if (teacher.class)
+            where.class = teacher.class;
+        const students = await this.users.find({ where });
         const enriched = students.map((s) => {
-            const prog = progressRecords.filter((p) => p.userId === s.id);
-            const completedRooms = prog.filter((p) => p.completedAt).length;
+            const completedRooms = s.scormProgress?.completedRooms?.length ?? 0;
+            const completedCases = s.scormProgress?.completedCases?.length ?? 0;
             return {
                 id: s.id,
                 name: s.name,
                 score: s.score,
                 level: constants_1.LEVEL_LABELS[s.level],
                 completedRooms,
+                completedCases,
             };
         });
         const avgScore = students.length
             ? Math.round(students.reduce((a, s) => a + s.score, 0) / students.length)
             : 0;
         const avgCompletion = enriched.length
-            ? Math.round((enriched.reduce((a, s) => a + s.completedRooms, 0) / enriched.length) * (100 / 6))
+            ? Math.round((enriched.reduce((a, s) => a + s.completedRooms, 0) / enriched.length) *
+                (100 / TOTAL_ROOMS))
             : 0;
         return {
             totalStudents: students.length,
@@ -67,8 +64,6 @@ exports.TeacherService = TeacherService;
 exports.TeacherService = TeacherService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(1, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], TeacherService);
 //# sourceMappingURL=teacher.service.js.map

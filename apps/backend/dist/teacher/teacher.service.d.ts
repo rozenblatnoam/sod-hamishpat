@@ -1,10 +1,8 @@
 import { Repository } from 'typeorm';
 import { User } from '../users/user.entity';
-import { Progress } from '../progress/progress.entity';
 export declare class TeacherService {
     private users;
-    private progress;
-    constructor(users: Repository<User>, progress: Repository<Progress>);
+    constructor(users: Repository<User>);
     getClassStats(teacher: User): Promise<{
         totalStudents: number;
         avgScore: number;
@@ -15,6 +13,7 @@ export declare class TeacherService {
             score: number;
             level: string;
             completedRooms: number;
+            completedCases: number;
         }[];
     }>;
 }

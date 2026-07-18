@@ -12,6 +12,7 @@ export declare class TeacherController {
             score: number;
             level: string;
             completedRooms: number;
+            completedCases: number;
         }[];
     }>;
 }

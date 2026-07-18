@@ -38,7 +38,7 @@ exports.AppModule = AppModule = __decorate([
                     const base = {
                         type: 'postgres',
                         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                        synchronize: config.get('NODE_ENV') !== 'production' || config.get('DB_SYNC') === 'true',
+                        synchronize: config.get('NODE_ENV') === 'development',
                         logging: config.get('NODE_ENV') === 'development',
                         ssl: databaseUrl ? { rejectUnauthorized: false } : false,
                     };

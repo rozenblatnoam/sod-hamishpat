@@ -6,8 +6,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { CasesService } from './cases.service';
 
 class VerdictDto {
-  @IsIn(['liable', 'exempt', 'partially_liable']) verdict: string;
-  @IsNotEmpty() reasoning: string;
+  @IsIn(['liable', 'exempt', 'partially_liable']) verdict!: string;
+  @IsNotEmpty() reasoning!: string;
   @IsOptional() @IsNumber() hintsUsed?: number;
 }
 
@@ -21,11 +21,6 @@ export class CasesController {
   @Get('lessons/:lessonId/cases')
   findByLesson(@Param('lessonId') lessonId: string) {
     return this.cases.findByLesson(lessonId);
-  }
-
-  @Get('cases/:id')
-  findOne(@Param('id') id: string) {
-    return this.cases.findOne(id);
   }
 
   @Post('cases/:id/verdict')

@@ -25,6 +25,9 @@ let ProgressController = class ProgressController {
     findAll(user) {
         return this.progress.findAllByUser(user.id);
     }
+    syncScorm(body, user) {
+        return this.progress.syncScorm(user.id, body);
+    }
     update(roomId, body, user) {
         return this.progress.update(user.id, roomId, body.action, body);
     }
@@ -37,6 +40,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ProgressController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Post)('sync'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], ProgressController.prototype, "syncScorm", null);
 __decorate([
     (0, common_1.Post)(':roomId'),
     __param(0, (0, common_1.Param)('roomId')),

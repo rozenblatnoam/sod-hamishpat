@@ -59,6 +59,10 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "firebaseUid", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true, default: null }),
+    __metadata("design:type", Object)
+], User.prototype, "scormProgress", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], User.prototype, "createdAt", void 0);

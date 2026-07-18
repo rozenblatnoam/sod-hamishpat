@@ -16,8 +16,7 @@ class RegisterDto {
   password!: string;
   @IsNotEmpty() school!: string;
   @IsOptional() @IsIn(['student', 'teacher']) role?: 'student' | 'teacher';
-  @ValidateIf((dto) => dto.role !== 'teacher')
-  @IsNotEmpty()
+  @IsOptional()
   class?: string;
 }
 
@@ -41,6 +40,12 @@ export class AuthController {
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto.email, dto.password);
+  }
+
+  @Post('google')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  googleLogin(@Body('idToken') idToken: string) {
+    return this.auth.loginWithFirebase(idToken);
   }
 
   @Get('me')

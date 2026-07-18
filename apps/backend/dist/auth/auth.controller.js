@@ -47,8 +47,7 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDto.prototype, "role", void 0);
 __decorate([
-    (0, class_validator_1.ValidateIf)((dto) => dto.role !== 'teacher'),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "class", void 0);
 class LoginDto {

@@ -25,6 +25,9 @@ export const POINTS = {
   NO_HINT_BONUS: 15,
 };
 
+export const TOTAL_CASES = 38;
+export const HINT_PENALTY = 2;
+
 export const LEVEL_ORDER: UserLevel[] = [
   'student',
   'trainee_judge',

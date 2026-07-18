@@ -12,13 +12,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const teacher_controller_1 = require("./teacher.controller");
 const teacher_service_1 = require("./teacher.service");
 const user_entity_1 = require("../users/user.entity");
-const progress_entity_1 = require("../progress/progress.entity");
 let TeacherModule = class TeacherModule {
 };
 exports.TeacherModule = TeacherModule;
 exports.TeacherModule = TeacherModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, progress_entity_1.Progress])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User])],
         controllers: [teacher_controller_1.TeacherController],
         providers: [teacher_service_1.TeacherService],
     })

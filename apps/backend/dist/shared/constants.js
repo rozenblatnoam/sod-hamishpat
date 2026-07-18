@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LEVEL_ORDER = exports.POINTS = exports.SCORE_THRESHOLDS = exports.LEVEL_LABELS = void 0;
+exports.LEVEL_ORDER = exports.HINT_PENALTY = exports.TOTAL_CASES = exports.POINTS = exports.SCORE_THRESHOLDS = exports.LEVEL_LABELS = void 0;
 exports.LEVEL_LABELS = {
     student: 'תלמיד',
     trainee_judge: 'דיין מתלמד',
@@ -21,6 +21,8 @@ exports.POINTS = {
     CORRECT_VERDICT: 50,
     NO_HINT_BONUS: 15,
 };
+exports.TOTAL_CASES = 38;
+exports.HINT_PENALTY = 2;
 exports.LEVEL_ORDER = [
     'student',
     'trainee_judge',

@@ -29,7 +29,10 @@ export class CasesService {
   ) {}
 
   findByLesson(lessonId: string) {
-    return this.cases.find({ where: { lessonId } });
+    return this.cases.find({
+      where: { lessonId },
+      select: { id: true, lessonId: true, title: true, scenario: true, createdAt: true },
+    });
   }
 
   async findOne(id: string) {

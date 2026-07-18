@@ -8,4 +8,6 @@ export declare const POINTS: {
     CORRECT_VERDICT: number;
     NO_HINT_BONUS: number;
 };
+export declare const TOTAL_CASES = 38;
+export declare const HINT_PENALTY = 2;
 export declare const LEVEL_ORDER: UserLevel[];

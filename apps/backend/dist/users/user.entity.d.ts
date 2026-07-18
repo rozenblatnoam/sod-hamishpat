@@ -11,6 +11,12 @@ export declare class User {
     role: 'student' | 'teacher' | 'admin';
     classCode: string | null;
     firebaseUid: string;
+    scormProgress: {
+        completedCases: string[];
+        completedRooms: string[];
+        score: number;
+        syncedAt: string;
+    } | null;
     createdAt: Date;
     updatedAt: Date;
 }

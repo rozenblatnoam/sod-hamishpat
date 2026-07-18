@@ -17,9 +17,12 @@ const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor(config, auth) {
+        const secret = config.get('JWT_SECRET');
+        if (!secret)
+            throw new Error('JWT_SECRET env var must be set');
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: config.get('JWT_SECRET', 'secret'),
+            secretOrKey: secret,
         });
         this.auth = auth;
     }

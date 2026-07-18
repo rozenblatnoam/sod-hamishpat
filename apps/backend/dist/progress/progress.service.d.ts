@@ -7,4 +7,9 @@ export declare class ProgressService {
     constructor(progress: Repository<Progress>, users: Repository<User>);
     findAllByUser(userId: string): Promise<Progress[]>;
     update(userId: string, roomId: string, action: string, payload: any): Promise<Progress>;
+    syncScorm(userId: string, data: {
+        hintsUsed?: number;
+    }): Promise<{
+        ok: boolean;
+    }>;
 }

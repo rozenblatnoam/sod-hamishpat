@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Progress } from './progress.entity';
 import { User } from '../users/user.entity';
-import { POINTS } from '../shared/constants';
+import { POINTS, TOTAL_CASES, HINT_PENALTY } from '../shared/constants';
 
 @Injectable()
 export class ProgressService {
@@ -48,5 +48,30 @@ export class ProgressService {
 
     await this.progress.save(prog);
     return prog;
+  }
+
+  async syncScorm(
+    userId: string,
+    data: { hintsUsed?: number },
+  ) {
+    // Derive progress from DB — never trust client-supplied case lists
+    const progRecords = await this.progress.find({ where: { userId } });
+    const uniqueCases = [...new Set(progRecords.flatMap((p) => p.completedQuestions ?? []))];
+    const uniqueRooms = [...new Set(
+      progRecords.filter((p) => p.completedAt != null).map((p) => p.roomId),
+    )];
+    const hintsUsed = Math.max(0, Math.floor(data.hintsUsed ?? 0));
+    const baseScore = Math.min(100, Math.round((uniqueCases.length / TOTAL_CASES) * 100));
+    const score = Math.max(0, baseScore - hintsUsed * HINT_PENALTY);
+    await this.users.update(userId, {
+      scormProgress: {
+        completedCases: uniqueCases,
+        completedRooms: uniqueRooms,
+        score,
+        syncedAt: new Date().toISOString(),
+      },
+      score,
+    });
+    return { ok: true };
   }
 }

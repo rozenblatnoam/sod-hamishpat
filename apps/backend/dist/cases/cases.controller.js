@@ -41,9 +41,6 @@ let CasesController = class CasesController {
     findByLesson(lessonId) {
         return this.cases.findByLesson(lessonId);
     }
-    findOne(id) {
-        return this.cases.findOne(id);
-    }
     submitVerdict(id, dto, user) {
         return this.cases.submitVerdict(id, user.id, dto.verdict, dto.reasoning, dto.hintsUsed);
     }
@@ -56,13 +53,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CasesController.prototype, "findByLesson", null);
-__decorate([
-    (0, common_1.Get)('cases/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], CasesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)('cases/:id/verdict'),
     __param(0, (0, common_1.Param)('id')),

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
+import { admin } from './firebase-admin';
 
 @Injectable()
 export class AuthService {
@@ -44,6 +45,31 @@ export class AuthService {
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('פרטים שגויים');
+
+    const token = this.jwt.sign({ sub: user.id, email: user.email });
+    return { token, user: this.sanitize(user) };
+  }
+
+  async loginWithFirebase(idToken: string) {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const email = decoded.email;
+    if (!email) throw new UnauthorizedException('לא נמצא אימייל בחשבון Google');
+
+    let user = await this.users.findOne({ where: { email } });
+    if (!user) {
+      user = this.users.create({
+        name: decoded.name ?? email.split('@')[0],
+        email,
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        school: '',
+        role: 'student',
+        firebaseUid: decoded.uid,
+      });
+      await this.users.save(user);
+    } else if (!user.firebaseUid) {
+      user.firebaseUid = decoded.uid;
+      await this.users.save(user);
+    }
 
     const token = this.jwt.sign({ sub: user.id, email: user.email });
     return { token, user: this.sanitize(user) };

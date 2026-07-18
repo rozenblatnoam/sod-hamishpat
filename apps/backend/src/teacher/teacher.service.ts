@@ -2,14 +2,14 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/user.entity';
-import { Progress } from '../progress/progress.entity';
 import { LEVEL_LABELS } from '../shared/constants';
+
+const TOTAL_ROOMS = 6;
 
 @Injectable()
 export class TeacherService {
   constructor(
     @InjectRepository(User) private users: Repository<User>,
-    @InjectRepository(Progress) private progress: Repository<Progress>,
   ) {}
 
   async getClassStats(teacher: User) {
@@ -17,27 +17,21 @@ export class TeacherService {
       throw new ForbiddenException('גישה לאזור מורה בלבד');
     }
 
-    const students = await this.users.find({
-      where: { school: teacher.school, role: 'student' },
-    });
-
-    const studentIds = students.map((s) => s.id);
-    const progressRecords = studentIds.length
-      ? await this.progress
-          .createQueryBuilder('p')
-          .where('p.userId IN (:...ids)', { ids: studentIds })
-          .getMany()
-      : [];
+    if (!teacher.school) return { totalStudents: 0, avgScore: 0, avgCompletion: 0, students: [] };
+    const where: Record<string, string> = { school: teacher.school, role: 'student' };
+    if (teacher.class) where.class = teacher.class;
+    const students = await this.users.find({ where });
 
     const enriched = students.map((s) => {
-      const prog = progressRecords.filter((p) => p.userId === s.id);
-      const completedRooms = prog.filter((p) => p.completedAt).length;
+      const completedRooms = s.scormProgress?.completedRooms?.length ?? 0;
+      const completedCases = s.scormProgress?.completedCases?.length ?? 0;
       return {
         id: s.id,
         name: s.name,
         score: s.score,
         level: LEVEL_LABELS[s.level],
         completedRooms,
+        completedCases,
       };
     });
 
@@ -46,7 +40,10 @@ export class TeacherService {
       : 0;
 
     const avgCompletion = enriched.length
-      ? Math.round((enriched.reduce((a, s) => a + s.completedRooms, 0) / enriched.length) * (100 / 6))
+      ? Math.round(
+          (enriched.reduce((a, s) => a + s.completedRooms, 0) / enriched.length) *
+            (100 / TOTAL_ROOMS),
+        )
       : 0;
 
     return {

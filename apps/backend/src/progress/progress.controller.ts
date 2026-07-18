@@ -16,6 +16,14 @@ export class ProgressController {
     return this.progress.findAllByUser(user.id);
   }
 
+  @Post('sync')
+  syncScorm(
+    @Body() body: { hintsUsed?: number },
+    @CurrentUser() user: any,
+  ) {
+    return this.progress.syncScorm(user.id, body);
+  }
+
   @Post(':roomId')
   update(
     @Param('roomId') roomId: string,

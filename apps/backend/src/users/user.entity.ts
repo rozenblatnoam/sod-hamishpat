@@ -43,6 +43,14 @@ export class User {
   @Column({ nullable: true })
   firebaseUid: string;
 
+  @Column({ type: 'jsonb', nullable: true, default: null })
+  scormProgress: {
+    completedCases: string[];
+    completedRooms: string[];
+    score: number;
+    syncedAt: string;
+  } | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
