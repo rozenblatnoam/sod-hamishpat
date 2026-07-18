@@ -916,6 +916,19 @@ html, body, #root {
 .google-btn:hover:not(:disabled) { background: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
 .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.login-card-google-only { text-align: center; padding: 48px 36px; }
+.login-google-hint { color: var(--text2); font-size: 0.95rem; margin: 8px 0 28px; }
+.google-btn-large {
+  padding: 14px 24px; font-size: 1.05rem; font-weight: 600;
+  border-radius: 50px; gap: 12px; margin-top: 0;
+}
+.google-btn-spinner {
+  width: 20px; height: 20px; border: 2px solid #dadce0;
+  border-top-color: #4285F4; border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .auth-divider {
   display: flex; align-items: center; gap: 10px;
   margin: 14px 0 6px; color: var(--text2); font-size: 0.82rem;
