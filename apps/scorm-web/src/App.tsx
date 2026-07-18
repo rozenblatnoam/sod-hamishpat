@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
 import { scorm } from './scorm/ScormAPI';
-import { apiGetClassStats, apiSyncProgress, apiGoogleLogin, type AuthUser, type ClassStats } from './api';
+import { apiGetClassStats, apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, type AuthUser, type ClassStats } from './api';
 import { signInWithGoogle } from './firebase';
 import './index.css';
 
@@ -443,14 +443,23 @@ function RoomScreen({ room, progress, teacherMode, onBack, onSelectLesson }: {
 }
 
 // ─── Lesson ────────────────────────────────────────────────────────────────
-function LessonScreen({ room, lesson, progress, teacherMode, onBack, onSelectCase }: {
+function LessonScreen({ room, lesson, progress, teacherMode, auth, onBack, onSelectCase }: {
   room: RoomData; lesson: LessonData; progress: Progress; teacherMode?: boolean;
-  onBack: () => void; onSelectCase: (c: CaseData, idx: number) => void;
+  auth: AuthState; onBack: () => void; onSelectCase: (c: CaseData, idx: number) => void;
 }) {
   type Tab = 'video' | 'content' | 'source' | 'cases';
   const hasTabs: Tab[] = [...(lesson.videoUrl ? ['video' as Tab] : []), 'content', ...(lesson.sourceContent ? ['source' as Tab] : []), 'cases'];
   const [tab, setTab] = useState<Tab>(hasTabs[0]);
+  const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
   const TAB_ICONS: Record<Tab, string> = { video: '🎬 סרטון', content: '📖 תוכן', source: '📜 מקורות', cases: '⚖️ תיקים' };
+
+  useEffect(() => {
+    if (!lesson.videoUrl) return;
+    const filename = lesson.videoUrl.replace('./videos/', '');
+    apiGetVideoUrl(auth.token, filename)
+      .then(setSignedVideoUrl)
+      .catch(() => {});
+  }, [lesson.videoUrl, auth.token]);
 
   return (
     <div className="screen">
@@ -470,7 +479,9 @@ function LessonScreen({ room, lesson, progress, teacherMode, onBack, onSelectCas
       <div className="tab-body">
         {tab === 'video' && lesson.videoUrl && (
           <div className="video-container">
-            <video className="lesson-video" src={lesson.videoUrl} controls controlsList="nodownload" playsInline />
+            {signedVideoUrl
+              ? <video className="lesson-video" src={signedVideoUrl} controls controlsList="nodownload" playsInline />
+              : <div className="video-loading">⏳ טוען סרטון...</div>}
             <div className="video-hint">📌 צפה בסרטון ואז עבור ללשונית <strong>תיקים</strong></div>
           </div>
         )}
@@ -1155,7 +1166,7 @@ export default function App() {
         onSelectLesson={l => setScreen({ name: 'lesson', room: screen.room, lesson: l })} />
     );
     if (screen.name === 'lesson') return (
-      <LessonScreen room={screen.room} lesson={screen.lesson} progress={progress} teacherMode={tMode}
+      <LessonScreen room={screen.room} lesson={screen.lesson} progress={progress} teacherMode={tMode} auth={auth}
         onBack={() => setScreen({ name: 'room', room: screen.room })}
         onSelectCase={(c, idx) => setScreen({ name: 'case', room: screen.room, lesson: screen.lesson, caseData: c, caseIndex: idx })} />
     );

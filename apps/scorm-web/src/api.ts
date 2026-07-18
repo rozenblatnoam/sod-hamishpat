@@ -59,6 +59,15 @@ export async function apiGoogleLogin(idToken: string): Promise<{ token: string; 
   return res.json();
 }
 
+export async function apiGetVideoUrl(token: string, filename: string): Promise<string> {
+  const res = await fetch(`${API}/videos/signed/${filename}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('שגיאה בטעינת הסרטון');
+  const { url } = await res.json();
+  return url;
+}
+
 export async function apiSyncProgress(
   token: string,
   data: { completedCases: string[]; completedRooms: string[]; hintsUsed?: number },

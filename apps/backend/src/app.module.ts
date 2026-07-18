@@ -13,6 +13,7 @@ import { AiModule } from './ai/ai.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { ClassesModule } from './classes/classes.module';
 import { AdminModule } from './admin/admin.module';
+import { VideosModule } from './videos/videos.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AdminModule } from './admin/admin.module';
     TeacherModule,
     ClassesModule,
     AdminModule,
+    VideosModule,
   ],
 })
 export class AppModule {}
