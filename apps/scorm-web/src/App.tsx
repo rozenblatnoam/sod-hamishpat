@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
 import { scorm } from './scorm/ScormAPI';
-import { apiGetClassStats, apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, type AuthUser, type ClassStats } from './api';
+import { apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, apiJoinClass, apiGetMyClasses, apiCreateClass, apiGetLeaderboard, type AuthUser, type ClassRoom, type LeaderboardStudent } from './api';
 import { signInWithGoogle } from './firebase';
 import './index.css';
+
+const ROOM_LIMIT = parseInt((import.meta.env.VITE_ROOM_LIMIT as string) || '99');
+const ACTIVE_ROOMS = ROOMS.slice(0, ROOM_LIMIT);
 
 // ─── Auth ─────────────────────────────────────────────────────────────────
 interface AuthState { user: AuthUser; token: string; }
@@ -57,12 +60,14 @@ function Toast({ toasts }: { toasts: ToastMsg[] }) {
 type AppScreen =
   | { name: 'splash' }
   | { name: 'login' }
+  | { name: 'join-class' }
   | { name: 'intro' }
   | { name: 'home' }
   | { name: 'room'; room: RoomData }
   | { name: 'lesson'; room: RoomData; lesson: LessonData }
   | { name: 'case'; room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number }
-  | { name: 'teacher-dashboard' };
+  | { name: 'teacher-dashboard' }
+  | { name: 'leaderboard' };
 
 // ─── Splash ────────────────────────────────────────────────────────────────
 function SplashScreen({ onDone }: { onDone: () => void }) {
@@ -124,31 +129,180 @@ function LoginScreen({ onLogin }: { onLogin: (auth: AuthState) => void }) {
   );
 }
 
-// ─── Teacher Dashboard ─────────────────────────────────────────────────────
-function TeacherDashboard({ auth, onBrowse, onLogout }: {
-  auth: AuthState; onBrowse: () => void; onLogout: () => void;
+// ─── Join Class ────────────────────────────────────────────────────────────
+function JoinClassScreen({ auth, onJoined, onSkip }: {
+  auth: AuthState; onJoined: (className: string) => void; onSkip: () => void;
 }) {
-  const [stats, setStats] = useState<ClassStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [sortBy, setSortBy] = useState<'name' | 'score' | 'rooms' | 'cases'>('rooms');
+
+  async function handleJoin() {
+    if (code.trim().length < 4) { setError('נא להזין קוד כיתה תקין'); return; }
+    setLoading(true); setError('');
+    try {
+      const res = await apiJoinClass(auth.token, code.trim().toUpperCase());
+      onJoined(res.className);
+    } catch (err: any) { setError(err.message ?? 'שגיאה בהצטרפות'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="login-screen">
+      <div className="login-card login-card-google-only">
+        <div className="join-class-icon">🏫</div>
+        <h1 className="login-title">הצטרף לכיתה</h1>
+        <p className="login-google-hint">בקש מהמורה שלך את קוד הכיתה</p>
+        <input
+          className="form-input join-code-input"
+          placeholder="קוד כיתה (לדוגמה: ABC123)"
+          value={code}
+          onChange={e => setCode(e.target.value.toUpperCase())}
+          maxLength={8}
+          dir="ltr"
+          onKeyDown={e => e.key === 'Enter' && handleJoin()}
+        />
+        {error && <div className="login-error">⚠️ {error}</div>}
+        <button className="login-btn" onClick={handleJoin} disabled={loading || !code.trim()}>
+          {loading ? 'מצטרף...' : 'הצטרף לכיתה ←'}
+        </button>
+        <button className="switch-mode-link" onClick={onSkip}>
+          המשך בלי כיתה
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Leaderboard Screen ─────────────────────────────────────────────────────
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+function LeaderboardScreen({ auth, onClose }: { auth: AuthState; onClose: () => void }) {
+  const [students, setStudents] = useState<LeaderboardStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reveal, setReveal] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
-    setError('');
-    apiGetClassStats(auth.token)
-      .then(setStats)
+    apiGetLeaderboard(auth.token).then(s => { setStudents(s); setLoading(false); }).catch(() => setLoading(false));
+  }, [auth.token]);
+
+  const top = students.slice(0, 3);
+  const rest = students.slice(3);
+
+  return (
+    <div className="leaderboard-overlay">
+      <div className="leaderboard-header">
+        <span className="leaderboard-title">🏆 לוח תוצאות</span>
+        <button className="leaderboard-close" onClick={onClose}>✕</button>
+      </div>
+
+      {loading && <div className="loading-msg">⏳ טוען...</div>}
+
+      {!loading && (
+        <>
+          {/* Top 3 podium */}
+          <div className="podium-row">
+            {[1, 0, 2].map(i => {
+              const s = top[i];
+              if (!s) return <div key={i} className="podium-slot" />;
+              const shown = reveal > i;
+              return (
+                <div key={i} className={`podium-slot podium-${i + 1} ${shown ? 'podium-revealed' : ''}`}>
+                  {shown && (
+                    <>
+                      <div className="podium-medal">{MEDALS[i]}</div>
+                      <div className="podium-name">{s.name}</div>
+                      <div className="podium-score">{s.score} נק׳</div>
+                      <div className="podium-rooms">{s.completedRooms} חדרים</div>
+                    </>
+                  )}
+                  <div className="podium-block podium-block-h" />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Reveal buttons */}
+          {reveal < 3 && (
+            <button className="leaderboard-reveal-btn" onClick={() => setReveal(r => r + 1)}>
+              {reveal === 0 ? '🥉 גלה מקום שלישי' : reveal === 1 ? '🥈 גלה מקום שני' : '🥇 גלה מקום ראשון'}
+            </button>
+          )}
+
+          {/* Rest of class */}
+          {reveal >= 3 && rest.length > 0 && (
+            <div className="leaderboard-rest">
+              {rest.map((s, i) => (
+                <div key={s.id} className="leaderboard-row">
+                  <span className="lb-rank">{i + 4}</span>
+                  <span className="lb-name">{s.name}</span>
+                  <span className="lb-score">{s.score} נק׳</span>
+                  <span className="lb-rooms">{s.completedRooms} חדרים</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Teacher Dashboard ─────────────────────────────────────────────────────
+function TeacherDashboard({ auth, onBrowse, onLogout, onLeaderboard }: {
+  auth: AuthState; onBrowse: () => void; onLogout: () => void; onLeaderboard: () => void;
+}) {
+  const [myClass, setMyClass] = useState<ClassRoom | null>(null);
+  const [students, setStudents] = useState<LeaderboardStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newClassName, setNewClassName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [sortBy, setSortBy] = useState<'score' | 'rooms' | 'name'>('score');
+
+  function reload() {
+    setLoading(true); setError('');
+    Promise.all([apiGetMyClasses(auth.token), apiGetLeaderboard(auth.token)])
+      .then(([classes, lb]) => {
+        setMyClass(classes[0] ?? null);
+        setStudents(lb);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [auth.token, retryCount]);
+  }
+
+  useEffect(() => { reload(); }, [auth.token]);
+
+  async function handleCreateClass() {
+    if (!newClassName.trim()) return;
+    setCreating(true);
+    try {
+      const cls = await apiCreateClass(auth.token, newClassName.trim());
+      setMyClass(cls); setNewClassName('');
+    } catch (e: any) { setError(e.message); }
+    finally { setCreating(false); }
+  }
+
+  function copyCode() {
+    if (!myClass) return;
+    navigator.clipboard.writeText(myClass.code);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  }
+
+  const sorted = [...students].sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name, 'he');
+    if (sortBy === 'rooms') return b.completedRooms - a.completedRooms;
+    return b.score - a.score;
+  });
 
   return (
     <div className="screen teacher-screen">
       <div className="top-bar">
         <button className="back-btn" onClick={onLogout}>יציאה</button>
         <span className="top-bar-title">דשבורד מורה</span>
-        <button className="teacher-browse-btn" onClick={onBrowse}>עיון בחומר ›</button>
+        <button className="teacher-browse-btn" onClick={onBrowse}>עיון ›</button>
       </div>
 
       <div className="teacher-hero">
@@ -159,64 +313,71 @@ function TeacherDashboard({ auth, onBrowse, onLogout }: {
         </div>
       </div>
 
-      {loading && <div className="loading-msg">⏳ טוען נתוני כיתה...</div>}
-      {error && (
-        <div className="error-msg">
-          ⚠️ {error}
-          <button className="retry-btn" onClick={() => setRetryCount(c => c + 1)}>↺ נסה שוב</button>
+      {/* Class code card */}
+      {myClass ? (
+        <div className="class-code-card">
+          <div className="class-code-label">📋 קוד הכיתה — שתף עם התלמידים</div>
+          <div className="class-code-row">
+            <span className="class-code-value">{myClass.code}</span>
+            <button className="class-code-copy" onClick={copyCode}>
+              {codeCopied ? '✓ הועתק' : '📋 העתק'}
+            </button>
+          </div>
+          <div className="class-code-name">{myClass.name} · {myClass.studentCount} תלמידים</div>
+        </div>
+      ) : (
+        <div className="create-class-card">
+          <div className="create-class-title">➕ צור כיתה</div>
+          <div className="create-class-row">
+            <input className="form-input" placeholder="שם הכיתה (לדוגמה: ז׳1)"
+              value={newClassName} onChange={e => setNewClassName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreateClass()} />
+            <button className="login-btn create-class-btn" onClick={handleCreateClass} disabled={creating || !newClassName.trim()}>
+              {creating ? '...' : 'צור'}
+            </button>
+          </div>
         </div>
       )}
 
-      {stats && (
-        <>
-          <div className="stats-row">
-            <div className="stat-card">
-              <div className="stat-num">{stats.totalStudents}</div>
-              <div className="stat-label">תלמידים</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-num">{stats.avgScore}</div>
-              <div className="stat-label">ציון ממוצע</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-num">{stats.avgCompletion}%</div>
-              <div className="stat-label">השלמה ממוצעת</div>
-            </div>
-          </div>
+      {/* Leaderboard button */}
+      <button className="leaderboard-launch-btn" onClick={onLeaderboard}>
+        🏆 הצג לוח תוצאות — פרסים ל-3 הראשונים
+      </button>
 
+      {loading && <div className="loading-msg">⏳ טוען...</div>}
+      {error && <div className="error-msg">⚠️ {error} <button className="retry-btn" onClick={reload}>↺</button></div>}
+
+      {!loading && (
+        <>
           <div className="section-label-row">
-            <span className="section-label" style={{ padding: 0 }}>תלמידי הכיתה</span>
+            <span className="section-label" style={{ padding: 0 }}>דירוג תלמידים</span>
             <div className="sort-btns">
-              {(['rooms', 'cases', 'score', 'name'] as const).map(key => (
+              {(['score', 'rooms', 'name'] as const).map(key => (
                 <button key={key} className={`sort-btn${sortBy === key ? ' sort-btn-active' : ''}`}
                   onClick={() => setSortBy(key)}>
-                  {{ rooms: 'חדרים', cases: 'תיקים', score: 'ציון', name: 'שם' }[key]}
+                  {{ score: 'ציון', rooms: 'חדרים', name: 'שם' }[key]}
                 </button>
               ))}
             </div>
           </div>
           <div className="students-list">
-            {stats.students.length === 0
-              ? <div className="empty-hint">אין תלמידים רשומים עדיין</div>
-              : [...stats.students].sort((a, b) => {
-                  if (sortBy === 'name') return a.name.localeCompare(b.name, 'he');
-                  if (sortBy === 'score') return b.score - a.score;
-                  if (sortBy === 'cases') return (b.completedCases ?? 0) - (a.completedCases ?? 0);
-                  return b.completedRooms - a.completedRooms;
-                }).map(s => (
-                <div key={s.id} className="student-card">
+            {sorted.length === 0
+              ? <div className="empty-hint">אין תלמידים עדיין — שתף את קוד הכיתה</div>
+              : sorted.map((s, i) => (
+                <div key={s.id} className={`student-card${i < 3 ? ' student-card-top' : ''}`}>
+                  <div className="student-rank">{i < 3 ? MEDALS[i] : i + 1}</div>
                   <div className="student-avatar">{s.name.charAt(0)}</div>
                   <div className="student-info">
                     <div className="student-name">{s.name}</div>
-                    <div className="student-meta">{s.level} · ציון: {s.score}</div>
+                    <div className="student-meta">{s.level}</div>
+                  </div>
+                  <div className="student-rooms">
+                    <div className="student-rooms-num">{s.score}</div>
+                    <div className="student-rooms-label">ציון</div>
                   </div>
                   <div className="student-rooms">
                     <div className="student-rooms-num">{s.completedRooms}</div>
                     <div className="student-rooms-label">חדרים</div>
-                  </div>
-                  <div className="student-rooms">
-                    <div className="student-rooms-num">{s.completedCases ?? 0}</div>
-                    <div className="student-rooms-label">תיקים</div>
                   </div>
                 </div>
               ))}
@@ -275,9 +436,9 @@ function IntroScreen({ onStart, userName }: { onStart: () => void; userName: str
           </div>
           <div className="escape-rules-divider" />
           <div className="escape-rules-stats">
-            <div className="escape-stat"><div className="escape-stat-num">{ROOMS.length}</div><div className="escape-stat-label">חדרים</div></div>
-            <div className="escape-stat"><div className="escape-stat-num">{TOTAL_CASES}</div><div className="escape-stat-label">תיקים</div></div>
-            <div className="escape-stat"><div className="escape-stat-num">{ROOMS.reduce((s, r) => s + r.lessons.length, 0)}</div><div className="escape-stat-label">שיעורים</div></div>
+            <div className="escape-stat"><div className="escape-stat-num">{ACTIVE_ROOMS.length}</div><div className="escape-stat-label">חדרים</div></div>
+            <div className="escape-stat"><div className="escape-stat-num">{ACTIVE_ROOMS.flatMap(r => r.lessons.flatMap(l => l.cases)).length}</div><div className="escape-stat-label">תיקים</div></div>
+            <div className="escape-stat"><div className="escape-stat-num">{ACTIVE_ROOMS.reduce((s, r) => s + r.lessons.length, 0)}</div><div className="escape-stat-label">שיעורים</div></div>
           </div>
         </div>
       </div>
@@ -340,7 +501,7 @@ function HomeScreen({ progress, onSelectRoom, onShowIntro, auth, onDashboard, on
 
       <div className="section-label">חדרי הבריחה</div>
       <div className="rooms-grid">
-        {ROOMS.map(room => {
+        {ACTIVE_ROOMS.map(room => {
           const roomCases = room.lessons.flatMap(l => l.cases);
           const roomDone = roomCases.filter(c => progress.completedCases.includes(c.id)).length;
           const roomPct = roomCases.length > 0 ? Math.round((roomDone / roomCases.length) * 100) : 0;
@@ -372,7 +533,7 @@ function HomeScreen({ progress, onSelectRoom, onShowIntro, auth, onDashboard, on
           <div className="section-label">הישגים שלי</div>
           <div className="achievements-row">
             {progress.completedRooms.map(rid => {
-              const room = ROOMS.find(r => r.id === rid);
+              const room = ACTIVE_ROOMS.find(r => r.id === rid);
               const ach = room ? ROOM_ACHIEVEMENTS[room.order] : null;
               if (!ach) return null;
               return <div key={rid} className="achievement-chip"><span>{ach.icon}</span><span>{ach.titleHe}</span></div>;
@@ -702,9 +863,9 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
   const isCorrect = submitted && myVerdict === caseData.verdict;
   const canSubmit = !!myVerdict && reasoning.trim().length >= MIN_REASONING;
 
-  const totalInRoom = ROOMS.find(r => r.id === room.id)?.lessons.flatMap(l => l.cases).length ?? 0;
+  const totalInRoom = ACTIVE_ROOMS.find(r => r.id === room.id)?.lessons.flatMap(l => l.cases).length ?? 0;
   const doneInRoom = progress.completedCases.filter(id =>
-    ROOMS.find(r => r.id === room.id)?.lessons.flatMap(l => l.cases).some(c => c.id === id)
+    ACTIVE_ROOMS.find(r => r.id === room.id)?.lessons.flatMap(l => l.cases).some(c => c.id === id)
   ).length;
 
   function handleSubmit() {
@@ -1079,6 +1240,8 @@ export default function App() {
     if (a.user.role === 'teacher' || a.user.role === 'admin') {
       setTeacherBrowse(false);
       setScreen({ name: 'teacher-dashboard' });
+    } else if (!a.user.classCode) {
+      setScreen({ name: 'join-class' });
     } else {
       const saw = localStorage.getItem(`escape_intro_${a.user.id}`);
       setScreen(saw ? { name: 'home' } : { name: 'intro' });
@@ -1101,7 +1264,7 @@ export default function App() {
       const newReasoning = { ...prev.reasoning, [caseId]: reasoning };
       const newHints = hintUsed && !prev.usedHints.includes(caseId)
         ? [...prev.usedHints, caseId] : prev.usedHints;
-      const room = ROOMS.find(r => r.id === roomId);
+      const room = ACTIVE_ROOMS.find(r => r.id === roomId);
       const allIds = room?.lessons.flatMap(l => l.cases).map(c => c.id) ?? [];
       const roomNowComplete = allIds.length > 0 && allIds.every(id => newCases.includes(id));
       const newRooms = roomNowComplete && !prev.completedRooms.includes(roomId)
@@ -1145,10 +1308,27 @@ export default function App() {
       }} />
     );
 
+    if (screen.name === 'join-class') return (
+      <JoinClassScreen auth={auth}
+        onJoined={(_className) => {
+          const saw = localStorage.getItem(`escape_intro_${auth.user.id}`);
+          setScreen(saw ? { name: 'home' } : { name: 'intro' });
+        }}
+        onSkip={() => {
+          const saw = localStorage.getItem(`escape_intro_${auth.user.id}`);
+          setScreen(saw ? { name: 'home' } : { name: 'intro' });
+        }} />
+    );
+
+    if (screen.name === 'leaderboard') return (
+      <LeaderboardScreen auth={auth} onClose={() => setScreen({ name: 'teacher-dashboard' })} />
+    );
+
     if (screen.name === 'teacher-dashboard') return (
       <TeacherDashboard auth={auth}
         onBrowse={() => { setTeacherBrowse(true); setScreen({ name: 'home' }); }}
-        onLogout={handleLogout} />
+        onLogout={handleLogout}
+        onLeaderboard={() => setScreen({ name: 'leaderboard' })} />
     );
 
     const tMode = teacherBrowse && isTeacher;
