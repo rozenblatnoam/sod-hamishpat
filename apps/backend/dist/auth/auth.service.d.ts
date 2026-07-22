@@ -20,6 +20,10 @@ export declare class AuthService {
         token: string;
         user: any;
     }>;
+    loginWithFirebase(idToken: string): Promise<{
+        token: string;
+        user: any;
+    }>;
     findById(id: string): Promise<User | null>;
     sanitize(user: User): any;
 }

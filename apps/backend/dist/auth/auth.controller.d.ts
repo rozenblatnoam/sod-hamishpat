@@ -22,6 +22,10 @@ export declare class AuthController {
         token: string;
         user: any;
     }>;
+    googleLogin(idToken: string): Promise<{
+        token: string;
+        user: any;
+    }>;
     me(user: any): any;
 }
 export {};

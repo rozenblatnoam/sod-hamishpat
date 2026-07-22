@@ -70,6 +70,9 @@ let AuthController = class AuthController {
     login(dto) {
         return this.auth.login(dto.email, dto.password);
     }
+    googleLogin(idToken) {
+        return this.auth.loginWithFirebase(idToken);
+    }
     me(user) {
         return this.auth.sanitize(user);
     }
@@ -91,6 +94,14 @@ __decorate([
     __metadata("design:paramtypes", [LoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('google'),
+    (0, throttler_1.Throttle)({ default: { ttl: 60000, limit: 10 } }),
+    __param(0, (0, common_1.Body)('idToken')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "googleLogin", null);
 __decorate([
     (0, common_1.Get)('me'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
