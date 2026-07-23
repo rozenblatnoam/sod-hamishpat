@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CourtroomScene } from './CourtroomScene';
+import { JudgeCharacter } from './components/JudgeCharacter';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
 import { scorm } from './scorm/ScormAPI';
@@ -860,6 +861,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
   const [hintRevealed, setHintRevealed] = useState(false);
   const [showXP, setShowXP] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [judgeReaction, setJudgeReaction] = useState<'correct' | 'wrong' | 'idle'>('idle');
   const reasoningRef = useRef<HTMLTextAreaElement>(null);
 
   const stepIdx = ALL_STEPS.indexOf(step);
@@ -876,6 +878,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
     const correct = myVerdict === caseData.verdict;
     setSubmitted(true);
     setStep('result');
+    setJudgeReaction(correct ? 'correct' : 'wrong');
     if (!alreadyDone && correct) {
       onComplete(reasoning.trim(), hintUsed);
       const xp = hintUsed ? 25 : 50;
@@ -895,6 +898,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
 
   return (
     <div className="screen">
+      <JudgeCharacter reaction={judgeReaction} onDone={() => setJudgeReaction('idle')} />
       <div className="top-bar">
         <button className="back-btn" onClick={onBack}>← חזרה</button>
         <span className="top-bar-title">תיק {caseIndex + 1} מתוך {lesson.cases.length}</span>
