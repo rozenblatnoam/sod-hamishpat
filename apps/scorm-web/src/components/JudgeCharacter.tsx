@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 
-// Spritesheet: 500×500px, 5 cols × 3 rows, each frame 100×167px
-// Row 0 (y=0):   idle / standing poses  → correct answer
-// Row 2 (y=334): gavel strike poses     → wrong answer
+// Spritesheet: 500×500px, 5 cols × 3 rows.
+// We only use row 0 (y=0) to avoid imprecise row-offset issues.
+// Correct → slow bounce + green glow.
+// Wrong   → fast frantic + red shake.
 
 type Reaction = 'correct' | 'wrong' | 'idle';
 
@@ -10,12 +11,6 @@ interface JudgeCharacterProps {
   reaction: Reaction;
   onDone?: () => void;
 }
-
-const ROW: Record<Reaction, number> = {
-  idle:    0,
-  correct: 0,
-  wrong:   334, // 2 * 167
-};
 
 export function JudgeCharacter({ reaction, onDone }: JudgeCharacterProps) {
   const [visible, setVisible] = useState(false);
@@ -26,13 +21,13 @@ export function JudgeCharacter({ reaction, onDone }: JudgeCharacterProps) {
     const timer = setTimeout(() => {
       setVisible(false);
       onDone?.();
-    }, reaction === 'correct' ? 1500 : 2000);
+    }, reaction === 'correct' ? 1800 : 2200);
     return () => clearTimeout(timer);
   }, [reaction, onDone]);
 
   if (!visible) return null;
 
-  const animName = reaction === 'wrong' ? 'judge-strike' : 'judge-idle';
+  const isCorrect = reaction === 'correct';
 
   return (
     <div style={{
@@ -42,37 +37,43 @@ export function JudgeCharacter({ reaction, onDone }: JudgeCharacterProps) {
       width: 100,
       height: 167,
       zIndex: 1000,
-      animation: 'judgeEnter 0.3s ease',
-      filter: reaction === 'correct'
-        ? 'drop-shadow(0 0 12px rgba(80,220,80,0.7))'
-        : reaction === 'wrong'
-        ? 'drop-shadow(0 0 12px rgba(220,60,60,0.7))'
-        : 'none',
+      animation: isCorrect
+        ? 'judgeEnter 0.3s ease, judgeBounce 0.6s ease 0.3s infinite alternate'
+        : 'judgeEnter 0.3s ease, judgeShake 0.4s ease 0.3s 3',
+      filter: isCorrect
+        ? 'drop-shadow(0 0 14px rgba(60,220,80,0.8))'
+        : 'drop-shadow(0 0 14px rgba(220,50,50,0.85))',
     }}>
       <div style={{
         width: 100,
         height: 167,
         backgroundImage: 'url(/assets/sprites/judge_spritesheet.png)',
         backgroundRepeat: 'no-repeat',
-        backgroundPositionY: `-${ROW[reaction]}px`,
-        animationName: animName,
-        animationDuration: reaction === 'wrong' ? '0.8s' : '1s',
-        animationTimingFunction: 'steps(5)',
-        animationIterationCount: reaction === 'idle' ? 'infinite' : '2',
-        animationFillMode: 'forwards',
+        backgroundPositionY: '0px',
+        animation: isCorrect
+          ? 'judgeSprite 1.2s steps(5) infinite'
+          : 'judgeSprite 0.5s steps(5) infinite',
       }} />
       <style>{`
-        @keyframes judge-idle {
-          from { background-position-x: 0; }
-          to   { background-position-x: -500px; }
-        }
-        @keyframes judge-strike {
+        @keyframes judgeSprite {
           from { background-position-x: 0; }
           to   { background-position-x: -500px; }
         }
         @keyframes judgeEnter {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes judgeBounce {
+          from { transform: translateY(0); }
+          to   { transform: translateY(-10px); }
+        }
+        @keyframes judgeShake {
+          0%   { transform: translateX(0) rotate(0deg); }
+          20%  { transform: translateX(-9px) rotate(-3deg); }
+          40%  { transform: translateX(9px) rotate(3deg); }
+          60%  { transform: translateX(-6px) rotate(-2deg); }
+          80%  { transform: translateX(6px) rotate(2deg); }
+          100% { transform: translateX(0) rotate(0deg); }
         }
       `}</style>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CourtroomScene } from './CourtroomScene';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import type { RoomData, CaseData, Verdict } from './content/types';
@@ -55,6 +55,7 @@ export function CourtroomGame({ room, progress, onClose, onCaseComplete }: Props
   const [reasoning, setReasoning]   = useState('');
   const [submitted, setSubmitted]   = useState(false);
   const [judgeReaction, setJudgeReaction] = useState<'idle' | 'correct' | 'wrong'>('idle');
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const activeLesson = room.lessons[activeLessonIdx];
   const activeCase   = activeLesson?.cases[activeCaseIdx] as CaseData | undefined;
@@ -159,10 +160,34 @@ export function CourtroomGame({ room, progress, onClose, onCaseComplete }: Props
             </div>
 
             {room.lessons.map((lesson, lIdx) => (
-              <div key={lesson.id} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: '0.8rem', color: '#e4b84a', fontWeight: 700, marginBottom: 8, letterSpacing: 0.5 }}>
-                  שיעור {lesson.order}: {lesson.title}
+              <div key={lesson.id} style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ fontSize: '0.8rem', color: '#e4b84a', fontWeight: 700, letterSpacing: 0.5, flex: 1 }}>
+                    שיעור {lesson.order}: {lesson.title}
+                  </div>
+                  {lesson.videoUrl && (
+                    <button
+                      className="ct-btn-ghost"
+                      style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap' }}
+                      onClick={() => setVideoUrl(videoUrl === lesson.videoUrl ? null : lesson.videoUrl!)}
+                    >
+                      {videoUrl === lesson.videoUrl ? '✕ סגור סרטון' : '▶ סרטון'}
+                    </button>
+                  )}
                 </div>
+
+                {videoUrl === lesson.videoUrl && lesson.videoUrl && (
+                  <video
+                    key={lesson.videoUrl}
+                    src={lesson.videoUrl}
+                    controls
+                    style={{
+                      width: '100%', borderRadius: 8, marginBottom: 10,
+                      border: '1px solid rgba(200,160,60,0.3)',
+                    }}
+                  />
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {lesson.cases.map((c, cIdx) => {
                     const done = progress.completedCases.includes(c.id);
