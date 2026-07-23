@@ -292,19 +292,25 @@ export function CourtroomScene({ roomName, onClose, onEnterCase }: Props) {
         </button>
       </div>
 
-      {/* Bottom hint */}
-      <div style={{
-        position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-        background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
-        color: 'rgba(255,220,120,0.95)', fontFamily: 'Heebo', direction: 'rtl',
-        padding: '10px 24px', borderRadius: 24,
-        border: '1px solid rgba(255,200,80,0.3)',
-        fontSize: '0.95rem', fontWeight: 600,
-        animation: 'fadeIn 0.5s ease',
-        whiteSpace: 'nowrap',
-      }}>
-        {hint}
-      </div>
+      {/* Bottom action button — tappable on mobile too */}
+      <button
+        onClick={onEnterCase}
+        style={{
+          position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
+          color: 'rgba(255,220,120,0.97)', fontFamily: 'Heebo', direction: 'rtl',
+          padding: '14px 36px', borderRadius: 28,
+          border: '1.5px solid rgba(255,200,80,0.45)',
+          fontSize: '1.05rem', fontWeight: 700,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          WebkitTapHighlightColor: 'rgba(0,0,0,0)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          minWidth: 200,
+        }}
+      >
+        {hint} ←
+      </button>
     </div>
   );
 }

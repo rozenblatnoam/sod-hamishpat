@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { CourtroomScene } from './CourtroomScene';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { apiGetVideoUrl } from './api';
@@ -28,28 +28,12 @@ type CaseStep = 'scenario' | 'verdict' | 'result';
 
 const MIN_REASONING = 15;
 
-const panel: React.CSSProperties = {
-  position: 'fixed', inset: 0, zIndex: 20,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  background: 'rgba(4,3,6,0.72)', backdropFilter: 'blur(3px)',
-};
-
-const card: React.CSSProperties = {
-  width: '90%', maxWidth: 560, maxHeight: '85vh',
-  overflowY: 'auto',
-  background: 'linear-gradient(160deg,#1a1208 0%,#12100e 100%)',
-  border: '1px solid rgba(200,160,60,0.35)',
-  borderRadius: 16,
-  padding: '28px 28px 24px',
-  direction: 'rtl',
-  fontFamily: 'Heebo, sans-serif',
-  color: '#f0e8d0',
-  boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
-  animation: 'panelIn 0.3s ease',
-};
 
 export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }: Props) {
-  const [phase, setPhase]           = useState<Phase>('scene');
+  const isMobile = typeof window !== 'undefined' &&
+    (window.innerWidth <= 768 || 'ontouchstart' in window);
+  const [phase, setPhase] = useState<Phase>(isMobile ? 'cases' : 'scene');
+  const backToScene = () => isMobile ? onClose() : setPhase('scene');
   const [activeLessonIdx, setActiveLessonIdx] = useState(0);
   const [activeCaseIdx, setActiveCaseIdx]     = useState(0);
   const [step, setStep]             = useState<CaseStep>('scenario');
@@ -114,6 +98,35 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
           from { opacity: 0; transform: translateY(16px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .ct-panel {
+          position: fixed; inset: 0; z-index: 20;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(4,3,6,0.85); backdrop-filter: blur(3px);
+        }
+        .ct-card {
+          width: 90%; max-width: 560px; max-height: 85vh;
+          overflow-y: auto;
+          background: linear-gradient(160deg,#1a1208 0%,#12100e 100%);
+          border: 1px solid rgba(200,160,60,0.35);
+          border-radius: 16px;
+          padding: 28px 28px 24px;
+          direction: rtl;
+          font-family: Heebo, sans-serif;
+          color: #f0e8d0;
+          box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+          animation: panelIn 0.3s ease;
+          box-sizing: border-box;
+        }
+        @media (max-width: 768px) {
+          .ct-panel { align-items: flex-end; background: rgba(4,3,6,0.96); }
+          .ct-card {
+            width: 100%; max-width: 100%; max-height: 94vh;
+            border-radius: 18px 18px 0 0;
+            padding: 20px 16px 28px;
+          }
+          .ct-btn, .ct-btn-ghost, .ct-verdict-btn { min-height: 48px; font-size: 1rem; }
+          .ct-textarea { font-size: 1rem; }
+        }
         .ct-btn {
           background: linear-gradient(135deg,#b8921a,#e4b84a);
           color: #1a0f00; border: none; border-radius: 10px;
@@ -157,23 +170,27 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
         .ct-case-done { color: #4caf50; font-size: 0.8rem; margin-right: auto; }
       `}</style>
 
-      {/* 3D Scene — always in background */}
-      <CourtroomScene
-        roomName={room.titleHe}
-        onClose={onClose}
-        onEnterCase={() => setPhase('cases')}
-      />
+      {/* 3D Scene — desktop only (touch devices skip to cases) */}
+      {isMobile ? (
+        <div style={{ width: '100%', height: '100vh', background: 'linear-gradient(160deg,#0e0b06 0%,#1a1208 100%)' }} />
+      ) : (
+        <CourtroomScene
+          roomName={room.titleHe}
+          onClose={onClose}
+          onEnterCase={() => setPhase('cases')}
+        />
+      )}
 
       {/* Judge reaction overlay */}
       <JudgeCharacter reaction={judgeReaction} onDone={() => setJudgeReaction('idle')} />
 
       {/* ── Case List Panel ─────────────────────────────────── */}
       {phase === 'cases' && (
-        <div style={panel} onClick={e => e.target === e.currentTarget && setPhase('scene')}>
-          <div style={card}>
+        <div className="ct-panel" onClick={e => e.target === e.currentTarget && backToScene()}>
+          <div className="ct-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#e4b84a' }}>⚖️ {room.titleHe}</h2>
-              <button className="ct-btn-ghost" onClick={() => setPhase('scene')}>✕ סגור</button>
+              <button className="ct-btn-ghost" onClick={backToScene}>✕ סגור</button>
             </div>
 
             {room.lessons.map((lesson, lIdx) => (
@@ -228,8 +245,8 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
 
       {/* ── Case Panel ──────────────────────────────────────── */}
       {phase === 'case' && activeCase && (
-        <div style={panel} onClick={e => e.target === e.currentTarget && setPhase('cases')}>
-          <div style={card}>
+        <div className="ct-panel" onClick={e => e.target === e.currentTarget && setPhase('cases')}>
+          <div className="ct-card">
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <button className="ct-btn-ghost" onClick={() => setPhase('cases')}>← חזרה לתיקים</button>
