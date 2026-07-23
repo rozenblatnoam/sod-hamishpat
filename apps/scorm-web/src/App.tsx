@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { CourtroomScene } from './CourtroomScene';
+import { CourtroomGame } from './CourtroomGame';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
@@ -1342,10 +1342,11 @@ export default function App() {
     const tMode = teacherBrowse && isTeacher;
 
     if (screen.name === 'courtroom') return (
-      <CourtroomScene
-        roomName={screen.room.titleHe}
+      <CourtroomGame
+        room={screen.room}
+        progress={progress}
         onClose={() => setScreen({ name: 'home' })}
-        onEnterCase={() => setScreen({ name: 'room', room: screen.room })}
+        onCaseComplete={(caseId, reasoning, hintUsed) => completeCase(caseId, screen.room.id, screen.room.order, reasoning, hintUsed)}
       />
     );
 
