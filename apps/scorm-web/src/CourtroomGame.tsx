@@ -18,9 +18,9 @@ interface Props {
 }
 
 const VERDICT_META: Record<Verdict, { label: string; icon: string; color: string }> = {
-  liable:           { label: 'חייב',          icon: '❌', color: '#c0392b' },
-  exempt:           { label: 'פטור',           icon: '✅', color: '#27ae60' },
-  partially_liable: { label: 'חייב חלקית',    icon: '⚖️', color: '#e67e22' },
+  liable:           { label: 'חייב',       icon: '❌', color: '#c0392b' },
+  exempt:           { label: 'פטור',        icon: '✅', color: '#27ae60' },
+  partially_liable: { label: 'חייב חלקית', icon: '⚖️', color: '#e67e22' },
 };
 
 type Phase = 'scene' | 'cases' | 'case';
@@ -28,34 +28,38 @@ type CaseStep = 'scenario' | 'verdict' | 'result';
 
 const MIN_REASONING = 15;
 
-
 export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }: Props) {
   const isMobile = typeof window !== 'undefined' &&
     (window.innerWidth <= 768 || 'ontouchstart' in window);
-  const [phase, setPhase] = useState<Phase>(isMobile ? 'cases' : 'scene');
-  const backToScene = () => isMobile ? onClose() : setPhase('scene');
+
+  const [phase, setPhase]                     = useState<Phase>('scene');
   const [activeLessonIdx, setActiveLessonIdx] = useState(0);
   const [activeCaseIdx, setActiveCaseIdx]     = useState(0);
-  const [step, setStep]             = useState<CaseStep>('scenario');
-  const [myVerdict, setMyVerdict]   = useState<Verdict | null>(null);
-  const [reasoning, setReasoning]   = useState('');
-  const [submitted, setSubmitted]   = useState(false);
-  const [judgeReaction, setJudgeReaction] = useState<'idle' | 'correct' | 'wrong'>('idle');
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoLoading, setVideoLoading] = useState(false);
+  const [step, setStep]                       = useState<CaseStep>('scenario');
+  const [myVerdict, setMyVerdict]             = useState<Verdict | null>(null);
+  const [reasoning, setReasoning]             = useState('');
+  const [submitted, setSubmitted]             = useState(false);
+  const [judgeReaction, setJudgeReaction]     = useState<'idle' | 'correct' | 'wrong'>('idle');
+  const [activeVideoId, setActiveVideoId]     = useState<string | null>(null);
+  const [videoUrl, setVideoUrl]               = useState<string | null>(null);
+  const [videoLoading, setVideoLoading]       = useState(false);
 
-  const toggleVideo = useCallback(async (lessonId: string, lessonVideoPath: string | null | undefined) => {
-    if (!lessonVideoPath) return;
+  const totalCases = room.lessons.reduce((n, l) => n + l.cases.length, 0);
+  const doneCount  = progress.completedCases.filter(id =>
+    room.lessons.some(l => l.cases.some(c => c.id === id))
+  ).length;
+
+  const toggleVideo = useCallback(async (lessonId: string, path: string | null | undefined) => {
+    if (!path) return;
     if (activeVideoId === lessonId) { setActiveVideoId(null); setVideoUrl(null); return; }
     setActiveVideoId(lessonId);
     setVideoLoading(true);
     try {
-      const filename = lessonVideoPath.split('/').pop()!;
+      const filename = path.split('/').pop()!;
       const url = await apiGetVideoUrl(token, filename);
       setVideoUrl(url);
-    } catch { setVideoUrl(lessonVideoPath); }
-    finally { setVideoLoading(false); }
+    } catch { setVideoUrl(path); }
+    finally   { setVideoLoading(false); }
   }, [token, activeVideoId]);
 
   const activeLesson = room.lessons[activeLessonIdx];
@@ -95,38 +99,74 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <style>{`
         @keyframes panelIn {
-          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          from { opacity: 0; transform: translateY(20px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes entryIn {
+          from { opacity: 0; transform: scale(0.94); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Entry screen ──────────────────────────────── */
+        .ct-entry-overlay {
+          position: fixed; inset: 0; z-index: 20;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(4,3,6,0.6); backdrop-filter: blur(2px);
+        }
+        .ct-entry-card {
+          width: 90%; max-width: 420px;
+          background: linear-gradient(160deg,#1e1508 0%,#110d07 100%);
+          border: 1px solid rgba(200,160,60,0.45);
+          border-radius: 22px;
+          padding: 44px 32px 36px;
+          direction: rtl; font-family: Heebo,sans-serif; color: #f0e8d0;
+          box-shadow: 0 32px 90px rgba(0,0,0,0.85);
+          text-align: center;
+          animation: entryIn 0.45s cubic-bezier(0.16,1,0.3,1);
+        }
+        .ct-entry-emblem { font-size: 3.4rem; margin-bottom: 18px; line-height: 1; }
+        .ct-entry-title  { font-size: 1.75rem; font-weight: 900; color: #e4b84a; margin: 0 0 10px; line-height: 1.2; }
+        .ct-entry-rule   { width: 56px; height: 2px; margin: 0 auto 12px;
+                           background: linear-gradient(90deg,transparent,#e4b84a55,#e4b84a,#e4b84a55,transparent); }
+        .ct-entry-meta   { font-size: 0.85rem; color: rgba(240,232,208,0.45); margin: 0 0 10px; }
+        .ct-entry-progress { font-size: 0.82rem; color: rgba(200,160,60,0.7); margin: 0 0 28px; }
+        .ct-entry-btn    { width: 100%; padding: 15px; font-size: 1.05rem;
+                           border-radius: 13px; margin-bottom: 10px; display: block; }
+        .ct-entry-back   { width: 100%; padding: 10px; font-size: 0.88rem; display: block; }
+
+        @media (max-width: 768px) {
+          .ct-entry-overlay { background: rgba(6,4,2,0.92); backdrop-filter: none; }
+          .ct-entry-card { max-width: 100%; border-radius: 0; padding: 56px 24px 40px;
+                           min-height: 100vh; justify-content: center;
+                           display: flex; flex-direction: column; align-items: center; }
+          .ct-entry-title { font-size: 2rem; }
+          .ct-entry-btn   { padding: 18px; font-size: 1.15rem; }
+        }
+
+        /* ── Panel / Card ──────────────────────────────── */
         .ct-panel {
           position: fixed; inset: 0; z-index: 20;
           display: flex; align-items: center; justify-content: center;
           background: rgba(4,3,6,0.85); backdrop-filter: blur(3px);
         }
         .ct-card {
-          width: 90%; max-width: 560px; max-height: 85vh;
-          overflow-y: auto;
+          width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto;
           background: linear-gradient(160deg,#1a1208 0%,#12100e 100%);
-          border: 1px solid rgba(200,160,60,0.35);
-          border-radius: 16px;
-          padding: 28px 28px 24px;
-          direction: rtl;
-          font-family: Heebo, sans-serif;
-          color: #f0e8d0;
+          border: 1px solid rgba(200,160,60,0.35); border-radius: 16px;
+          padding: 28px 28px 24px; direction: rtl;
+          font-family: Heebo,sans-serif; color: #f0e8d0;
           box-shadow: 0 24px 64px rgba(0,0,0,0.7);
-          animation: panelIn 0.3s ease;
-          box-sizing: border-box;
+          animation: panelIn 0.3s ease; box-sizing: border-box;
         }
         @media (max-width: 768px) {
           .ct-panel { align-items: flex-end; background: rgba(4,3,6,0.96); }
-          .ct-card {
-            width: 100%; max-width: 100%; max-height: 94vh;
-            border-radius: 18px 18px 0 0;
-            padding: 20px 16px 28px;
-          }
+          .ct-card  { width: 100%; max-width: 100%; max-height: 94vh;
+                      border-radius: 18px 18px 0 0; padding: 20px 16px 28px; }
           .ct-btn, .ct-btn-ghost, .ct-verdict-btn { min-height: 48px; font-size: 1rem; }
           .ct-textarea { font-size: 1rem; }
         }
+
+        /* ── Shared buttons ────────────────────────────── */
         .ct-btn {
           background: linear-gradient(135deg,#b8921a,#e4b84a);
           color: #1a0f00; border: none; border-radius: 10px;
@@ -134,7 +174,7 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
           cursor: pointer; font-family: Heebo,sans-serif;
           transition: transform 0.15s, box-shadow 0.15s;
         }
-        .ct-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(184,146,26,0.4); }
+        .ct-btn:hover    { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(184,146,26,0.4); }
         .ct-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
         .ct-btn-ghost {
           background: transparent; color: rgba(240,232,208,0.6);
@@ -150,7 +190,7 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
           font-weight: 700; font-size: 0.95rem; transition: all 0.15s;
           background: rgba(255,255,255,0.04); color: #f0e8d0; width: 100%;
         }
-        .ct-verdict-btn:hover { background: rgba(255,255,255,0.08); }
+        .ct-verdict-btn:hover   { background: rgba(255,255,255,0.08); }
         .ct-verdict-btn.selected { background: rgba(255,255,255,0.1); }
         .ct-textarea {
           width: 100%; box-sizing: border-box;
@@ -160,7 +200,8 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
           direction: rtl;
         }
         .ct-textarea:focus { outline: none; border-color: rgba(200,160,60,0.6); }
-        .ct-label { font-size: 0.75rem; color: rgba(240,232,208,0.55); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .ct-label { font-size: 0.75rem; color: rgba(240,232,208,0.55);
+                    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
         .ct-case-row {
           display: flex; align-items: center; gap: 10px; padding: 10px 12px;
           border-radius: 10px; cursor: pointer; transition: background 0.15s;
@@ -170,9 +211,12 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
         .ct-case-done { color: #4caf50; font-size: 0.8rem; margin-right: auto; }
       `}</style>
 
-      {/* 3D Scene — desktop only (touch devices skip to cases) */}
+      {/* ── Background ───────────────────────────────────────── */}
       {isMobile ? (
-        <div style={{ width: '100%', height: '100vh', background: 'linear-gradient(160deg,#0e0b06 0%,#1a1208 100%)' }} />
+        <div style={{
+          width: '100%', height: '100vh',
+          background: 'radial-gradient(ellipse at 50% 20%, #2a1906 0%, #110c06 55%, #060403 100%)',
+        }} />
       ) : (
         <CourtroomScene
           roomName={room.titleHe}
@@ -181,16 +225,41 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
         />
       )}
 
-      {/* Judge reaction overlay */}
+      {/* ── Judge reaction ───────────────────────────────────── */}
       <JudgeCharacter reaction={judgeReaction} onDone={() => setJudgeReaction('idle')} />
 
-      {/* ── Case List Panel ─────────────────────────────────── */}
+      {/* ══ Entry Screen ══════════════════════════════════════ */}
+      {phase === 'scene' && (
+        <div className="ct-entry-overlay">
+          <div className="ct-entry-card">
+            <div className="ct-entry-emblem">⚖️</div>
+            <h1 className="ct-entry-title">{room.titleHe}</h1>
+            <div className="ct-entry-rule" />
+            <p className="ct-entry-meta">
+              {room.lessons.length} שיעורים · {totalCases} תיקים
+            </p>
+            {doneCount > 0 && (
+              <p className="ct-entry-progress">
+                ✅ {doneCount} מתוך {totalCases} הושלמו
+              </p>
+            )}
+            <button className="ct-btn ct-entry-btn" onClick={() => setPhase('cases')}>
+              הכנס לאולם המשפט ←
+            </button>
+            <button className="ct-btn-ghost ct-entry-back" onClick={onClose}>
+              ← חזרה
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Case List Panel ═══════════════════════════════════ */}
       {phase === 'cases' && (
-        <div className="ct-panel" onClick={e => e.target === e.currentTarget && backToScene()}>
+        <div className="ct-panel" onClick={e => e.target === e.currentTarget && setPhase('scene')}>
           <div className="ct-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#e4b84a' }}>⚖️ {room.titleHe}</h2>
-              <button className="ct-btn-ghost" onClick={backToScene}>✕ סגור</button>
+              <button className="ct-btn-ghost" onClick={() => setPhase('scene')}>✕ סגור</button>
             </div>
 
             {room.lessons.map((lesson, lIdx) => (
@@ -206,21 +275,17 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
                       onClick={() => toggleVideo(lesson.id, lesson.videoUrl)}
                       disabled={videoLoading && activeVideoId !== lesson.id}
                     >
-                      {videoLoading && activeVideoId === lesson.id ? '⏳' : activeVideoId === lesson.id ? '✕ סגור סרטון' : '▶ סרטון'}
+                      {videoLoading && activeVideoId === lesson.id
+                        ? '⏳' : activeVideoId === lesson.id ? '✕ סגור סרטון' : '▶ סרטון'}
                     </button>
                   )}
                 </div>
 
                 {activeVideoId === lesson.id && videoUrl && (
                   <video
-                    key={videoUrl}
-                    src={videoUrl}
-                    controls
-                    autoPlay
-                    style={{
-                      width: '100%', borderRadius: 8, marginBottom: 10,
-                      border: '1px solid rgba(200,160,60,0.3)',
-                    }}
+                    key={videoUrl} src={videoUrl} controls autoPlay
+                    style={{ width: '100%', borderRadius: 8, marginBottom: 10,
+                             border: '1px solid rgba(200,160,60,0.3)' }}
                   />
                 )}
 
@@ -243,11 +308,10 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
         </div>
       )}
 
-      {/* ── Case Panel ──────────────────────────────────────── */}
+      {/* ══ Case Panel ════════════════════════════════════════ */}
       {phase === 'case' && activeCase && (
         <div className="ct-panel" onClick={e => e.target === e.currentTarget && setPhase('cases')}>
           <div className="ct-card">
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <button className="ct-btn-ghost" onClick={() => setPhase('cases')}>← חזרה לתיקים</button>
               <span style={{ fontSize: '0.8rem', color: 'rgba(240,232,208,0.5)' }}>
@@ -288,8 +352,7 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
                         style={{ borderColor: myVerdict === v ? m.color : 'transparent' }}
                         onClick={() => setMyVerdict(v)}
                       >
-                        <span>{m.icon}</span>
-                        <span>{m.label}</span>
+                        <span>{m.icon}</span><span>{m.label}</span>
                       </button>
                     );
                   })}
@@ -326,8 +389,7 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
             {step === 'result' && myVerdict && (
               <>
                 <div style={{
-                  background: myVerdict === activeCase.verdict
-                    ? 'rgba(39,174,96,0.15)' : 'rgba(192,57,43,0.15)',
+                  background: myVerdict === activeCase.verdict ? 'rgba(39,174,96,0.15)' : 'rgba(192,57,43,0.15)',
                   border: `1px solid ${myVerdict === activeCase.verdict ? '#27ae60' : '#c0392b'}44`,
                   borderRadius: 10, padding: '12px 16px', marginBottom: 16,
                   fontSize: '0.95rem', fontWeight: 700,
@@ -339,24 +401,20 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                  <div style={{
-                    flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 8,
-                    padding: '8px 12px', fontSize: '0.85rem', textAlign: 'center',
-                  }}>
-                    <div style={{ color: 'rgba(240,232,208,0.5)', fontSize: '0.7rem', marginBottom: 4 }}>פסיקתך</div>
-                    <span style={{ color: VERDICT_META[myVerdict].color, fontWeight: 800 }}>
-                      {VERDICT_META[myVerdict].icon} {VERDICT_META[myVerdict].label}
-                    </span>
-                  </div>
-                  <div style={{
-                    flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 8,
-                    padding: '8px 12px', fontSize: '0.85rem', textAlign: 'center',
-                  }}>
-                    <div style={{ color: 'rgba(240,232,208,0.5)', fontSize: '0.7rem', marginBottom: 4 }}>הדין</div>
-                    <span style={{ color: VERDICT_META[activeCase.verdict].color, fontWeight: 800 }}>
-                      {VERDICT_META[activeCase.verdict].icon} {VERDICT_META[activeCase.verdict].label}
-                    </span>
-                  </div>
+                  {[
+                    { label: 'פסיקתך', v: myVerdict },
+                    { label: 'הדין',   v: activeCase.verdict },
+                  ].map(({ label, v }) => (
+                    <div key={label} style={{
+                      flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 8,
+                      padding: '8px 12px', fontSize: '0.85rem', textAlign: 'center',
+                    }}>
+                      <div style={{ color: 'rgba(240,232,208,0.5)', fontSize: '0.7rem', marginBottom: 4 }}>{label}</div>
+                      <span style={{ color: VERDICT_META[v].color, fontWeight: 800 }}>
+                        {VERDICT_META[v].icon} {VERDICT_META[v].label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="ct-label">הסבר הדין</div>
@@ -368,9 +426,7 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
                   {myVerdict !== activeCase.verdict && (
                     <button className="ct-btn-ghost" onClick={handleRetry}>נסה שוב</button>
                   )}
-                  <button className="ct-btn" onClick={() => setPhase('cases')}>
-                    לתיק הבא ←
-                  </button>
+                  <button className="ct-btn" onClick={() => setPhase('cases')}>לתיק הבא ←</button>
                 </div>
               </>
             )}
