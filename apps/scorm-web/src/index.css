@@ -225,6 +225,16 @@ html, body, #root {
 .room-card-completed { border-color: var(--gold); }
 .room-card-completed::before { background: var(--gold); }
 
+.room-card-beta { border-color: #7c5cbf; box-shadow: 0 0 18px rgba(124,92,191,0.25); }
+.room-card-beta::before { background: #7c5cbf; }
+.room-card-beta:hover { box-shadow: 0 8px 28px rgba(124,92,191,0.4); }
+.room-beta-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: linear-gradient(135deg, #7c5cbf, #a47de8);
+  color: #fff; font-size: 0.68rem; font-weight: 800;
+  padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px;
+}
+
 .room-done-badge {
   position: absolute;
   top: 10px;

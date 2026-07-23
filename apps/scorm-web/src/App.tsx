@@ -512,10 +512,11 @@ function HomeScreen({ progress, onSelectRoom, onShowIntro, onEnterCourtroom, aut
           const isCompleted = progress.completedRooms.includes(room.id);
           return (
             <div key={room.id}
-              className={`room-card${isCompleted ? ' room-card-completed' : ''}`}
+              className={`room-card${isCompleted ? ' room-card-completed' : ''}${room.id === 'room-1' && !teacherMode ? ' room-card-beta' : ''}`}
               style={{ '--room-color': room.color } as React.CSSProperties}
-              onClick={() => onSelectRoom(room)}>
+              onClick={() => room.id === 'room-1' && !teacherMode ? onEnterCourtroom(room) : onSelectRoom(room)}>
               {isCompleted && <div className="room-done-badge">✓ הושלם</div>}
+              {room.id === 'room-1' && !teacherMode && <div className="room-beta-badge">🏛️ בטא 3D</div>}
               <div className="room-card-icon">{room.icon}</div>
               <div className="room-card-order">חדר {room.order}</div>
               <div className="room-card-title">{room.titleHe}</div>
