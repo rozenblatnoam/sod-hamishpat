@@ -18,17 +18,15 @@ const ROW: Record<Reaction, number> = {
 };
 
 export function JudgeCharacter({ reaction, onDone }: JudgeCharacterProps) {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (reaction === 'idle') { setVisible(false); return; }
     setVisible(true);
-    if (reaction === 'idle') return;
-
     const timer = setTimeout(() => {
       setVisible(false);
       onDone?.();
     }, reaction === 'correct' ? 1500 : 2000);
-
     return () => clearTimeout(timer);
   }, [reaction, onDone]);
 
