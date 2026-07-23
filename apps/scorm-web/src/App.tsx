@@ -1345,6 +1345,7 @@ export default function App() {
       <CourtroomGame
         room={screen.room}
         progress={progress}
+        token={auth!.token}
         onClose={() => setScreen({ name: 'home' })}
         onCaseComplete={(caseId, reasoning, hintUsed) => completeCase(caseId, screen.room.id, screen.room.order, reasoning, hintUsed)}
       />

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { CourtroomScene } from './CourtroomScene';
 import { JudgeCharacter } from './components/JudgeCharacter';
+import { apiGetVideoUrl } from './api';
 import type { RoomData, CaseData, Verdict } from './content/types';
 
 interface Progress {
@@ -11,6 +12,7 @@ interface Progress {
 interface Props {
   room: RoomData;
   progress: Progress;
+  token: string;
   onClose: () => void;
   onCaseComplete: (caseId: string, reasoning: string, hintUsed: boolean) => void;
 }
@@ -46,7 +48,7 @@ const card: React.CSSProperties = {
   animation: 'panelIn 0.3s ease',
 };
 
-export function CourtroomGame({ room, progress, onClose, onCaseComplete }: Props) {
+export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }: Props) {
   const [phase, setPhase]           = useState<Phase>('scene');
   const [activeLessonIdx, setActiveLessonIdx] = useState(0);
   const [activeCaseIdx, setActiveCaseIdx]     = useState(0);
@@ -56,6 +58,19 @@ export function CourtroomGame({ room, progress, onClose, onCaseComplete }: Props
   const [submitted, setSubmitted]   = useState(false);
   const [judgeReaction, setJudgeReaction] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+
+  const toggleVideo = useCallback(async (lessonVideoPath: string | null | undefined) => {
+    if (!lessonVideoPath) return;
+    if (videoUrl) { setVideoUrl(null); return; }
+    const filename = lessonVideoPath.split('/').pop()!;
+    setVideoLoading(true);
+    try {
+      const url = await apiGetVideoUrl(token, filename);
+      setVideoUrl(url);
+    } catch { setVideoUrl(lessonVideoPath); } // fallback to local path
+    finally { setVideoLoading(false); }
+  }, [token, videoUrl]);
 
   const activeLesson = room.lessons[activeLessonIdx];
   const activeCase   = activeLesson?.cases[activeCaseIdx] as CaseData | undefined;
@@ -169,9 +184,10 @@ export function CourtroomGame({ room, progress, onClose, onCaseComplete }: Props
                     <button
                       className="ct-btn-ghost"
                       style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap' }}
-                      onClick={() => setVideoUrl(videoUrl === lesson.videoUrl ? null : lesson.videoUrl!)}
+                      onClick={() => toggleVideo(lesson.videoUrl)}
+                      disabled={videoLoading}
                     >
-                      {videoUrl === lesson.videoUrl ? '✕ סגור סרטון' : '▶ סרטון'}
+                      {videoLoading ? '⏳' : videoUrl ? '✕ סגור סרטון' : '▶ סרטון'}
                     </button>
                   )}
                 </div>
