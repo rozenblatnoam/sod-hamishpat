@@ -57,20 +57,22 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
   const [reasoning, setReasoning]   = useState('');
   const [submitted, setSubmitted]   = useState(false);
   const [judgeReaction, setJudgeReaction] = useState<'idle' | 'correct' | 'wrong'>('idle');
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
 
-  const toggleVideo = useCallback(async (lessonVideoPath: string | null | undefined) => {
+  const toggleVideo = useCallback(async (lessonId: string, lessonVideoPath: string | null | undefined) => {
     if (!lessonVideoPath) return;
-    if (videoUrl) { setVideoUrl(null); return; }
-    const filename = lessonVideoPath.split('/').pop()!;
+    if (activeVideoId === lessonId) { setActiveVideoId(null); setVideoUrl(null); return; }
+    setActiveVideoId(lessonId);
     setVideoLoading(true);
     try {
+      const filename = lessonVideoPath.split('/').pop()!;
       const url = await apiGetVideoUrl(token, filename);
       setVideoUrl(url);
-    } catch { setVideoUrl(lessonVideoPath); } // fallback to local path
+    } catch { setVideoUrl(lessonVideoPath); }
     finally { setVideoLoading(false); }
-  }, [token, videoUrl]);
+  }, [token, activeVideoId]);
 
   const activeLesson = room.lessons[activeLessonIdx];
   const activeCase   = activeLesson?.cases[activeCaseIdx] as CaseData | undefined;
@@ -184,19 +186,20 @@ export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }
                     <button
                       className="ct-btn-ghost"
                       style={{ fontSize: '0.75rem', padding: '4px 10px', whiteSpace: 'nowrap' }}
-                      onClick={() => toggleVideo(lesson.videoUrl)}
-                      disabled={videoLoading}
+                      onClick={() => toggleVideo(lesson.id, lesson.videoUrl)}
+                      disabled={videoLoading && activeVideoId !== lesson.id}
                     >
-                      {videoLoading ? '⏳' : videoUrl ? '✕ סגור סרטון' : '▶ סרטון'}
+                      {videoLoading && activeVideoId === lesson.id ? '⏳' : activeVideoId === lesson.id ? '✕ סגור סרטון' : '▶ סרטון'}
                     </button>
                   )}
                 </div>
 
-                {videoUrl === lesson.videoUrl && lesson.videoUrl && (
+                {activeVideoId === lesson.id && videoUrl && (
                   <video
-                    key={lesson.videoUrl}
-                    src={lesson.videoUrl}
+                    key={videoUrl}
+                    src={videoUrl}
                     controls
+                    autoPlay
                     style={{
                       width: '100%', borderRadius: 8, marginBottom: 10,
                       border: '1px solid rgba(200,160,60,0.3)',
