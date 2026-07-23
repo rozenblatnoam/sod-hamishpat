@@ -105,34 +105,99 @@ export function CourtroomScene({ roomName, onClose, onEnterCase }: Props) {
     benchFront.position.set(0, 1.58, 3.78);
     benchFront.material = goldMat;
 
-    // ── Scales of Justice (above bench) ─────────────────────────────────────
-    const scalesPost = MeshBuilder.CreateCylinder('scalesPost', { height: 1.2, diameter: 0.06 }, scene);
-    scalesPost.position.set(0, 2.4, 4.3);
-    scalesPost.material = goldMat;
+    // ── 3 Judge Figures (no faces) ───────────────────────────────────────────
+    const robeMat = new StandardMaterial('robe', scene);
+    robeMat.diffuseColor = new Color3(0.08, 0.08, 0.12);
+    robeMat.specularColor = new Color3(0.15, 0.15, 0.2);
 
-    const scalesBar = MeshBuilder.CreateBox('scalesBar', { width: 1.2, height: 0.06, depth: 0.06 }, scene);
-    scalesBar.position.set(0, 3.0, 4.3);
-    scalesBar.material = goldMat;
+    const skinMat = new StandardMaterial('skin', scene);
+    skinMat.diffuseColor = new Color3(0.75, 0.62, 0.5);
 
-    const scaleLeft = MeshBuilder.CreateCylinder('scaleLeft', { height: 0.08, diameter: 0.4 }, scene);
-    scaleLeft.position.set(-0.55, 2.75, 4.3);
-    scaleLeft.material = goldMat;
+    const hatMat = new StandardMaterial('hat', scene);
+    hatMat.diffuseColor = new Color3(0.06, 0.06, 0.08);
 
-    const scaleRight = MeshBuilder.CreateCylinder('scaleRight', { height: 0.08, diameter: 0.4 }, scene);
-    scaleRight.position.set(0.55, 2.85, 4.3);
-    scaleRight.material = goldMat;
+    function createJudge(name: string, x: number, scale: number, phaseOffset: number) {
+      const root = MeshBuilder.CreateBox(`${name}Root`, { width: 0.01, height: 0.01, depth: 0.01 }, scene);
+      root.position.set(x, 1.65, 4.55);
+      root.isVisible = false;
 
-    // Animate scales gently
-    const scalesAnim = new Animation('scaleAnim', 'rotation.z', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-    scalesAnim.setKeys([
-      { frame: 0, value: 0 },
-      { frame: 60, value: 0.08 },
-      { frame: 120, value: 0 },
-      { frame: 180, value: -0.08 },
-      { frame: 240, value: 0 },
-    ]);
-    scalesBar.animations = [scalesAnim];
-    scene.beginAnimation(scalesBar, 0, 240, true);
+      // Body (robe)
+      const body = MeshBuilder.CreateBox(`${name}Body`, { width: 0.55 * scale, height: 0.9 * scale, depth: 0.38 * scale }, scene);
+      body.parent = root;
+      body.position.y = 0;
+      body.material = robeMat;
+      shadows.addShadowCaster(body);
+
+      // Shoulders
+      const shoulders = MeshBuilder.CreateBox(`${name}Sho`, { width: 0.7 * scale, height: 0.18 * scale, depth: 0.42 * scale }, scene);
+      shoulders.parent = root;
+      shoulders.position.y = 0.38 * scale;
+      shoulders.material = robeMat;
+
+      // Head (featureless sphere)
+      const head = MeshBuilder.CreateSphere(`${name}Head`, { diameter: 0.32 * scale, segments: 10 }, scene);
+      head.parent = root;
+      head.position.y = 0.68 * scale;
+      head.material = skinMat;
+      shadows.addShadowCaster(head);
+
+      // Judge hat (flat cylinder)
+      const hatBrim = MeshBuilder.CreateCylinder(`${name}HatBrim`, { height: 0.04 * scale, diameter: 0.48 * scale }, scene);
+      hatBrim.parent = root;
+      hatBrim.position.y = 0.86 * scale;
+      hatBrim.material = hatMat;
+
+      const hatTop = MeshBuilder.CreateCylinder(`${name}HatTop`, { height: 0.22 * scale, diameter: 0.3 * scale }, scene);
+      hatTop.parent = root;
+      hatTop.position.y = 0.98 * scale;
+      hatTop.material = hatMat;
+
+      // Arms
+      const armL = MeshBuilder.CreateBox(`${name}ArmL`, { width: 0.14 * scale, height: 0.5 * scale, depth: 0.14 * scale }, scene);
+      armL.parent = root;
+      armL.position.set(-0.36 * scale, 0.12 * scale, 0);
+      armL.material = robeMat;
+
+      const armR = MeshBuilder.CreateBox(`${name}ArmR`, { width: 0.14 * scale, height: 0.5 * scale, depth: 0.14 * scale }, scene);
+      armR.parent = root;
+      armR.position.set(0.36 * scale, 0.12 * scale, 0);
+      armR.material = robeMat;
+
+      // Breathing animation on root Y
+      const breathAnim = new Animation(
+        `${name}Breath`, 'position.y', 30,
+        Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+      const base = 1.65;
+      breathAnim.setKeys([
+        { frame: 0 + phaseOffset,   value: base },
+        { frame: 45 + phaseOffset,  value: base + 0.04 },
+        { frame: 90 + phaseOffset,  value: base },
+        { frame: 135 + phaseOffset, value: base - 0.02 },
+        { frame: 180 + phaseOffset, value: base },
+      ]);
+      root.animations = [breathAnim];
+      scene.beginAnimation(root, 0, 180, true);
+
+      // Subtle head nod
+      const nodAnim = new Animation(
+        `${name}Nod`, 'rotation.x', 30,
+        Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+      nodAnim.setKeys([
+        { frame: 0,   value: 0 },
+        { frame: 60,  value: 0.06 },
+        { frame: 120, value: 0 },
+        { frame: 180, value: -0.04 },
+        { frame: 240, value: 0 },
+      ]);
+      head.animations = [nodAnim];
+      scene.beginAnimation(head, phaseOffset, 240 + phaseOffset, true);
+    }
+
+    createJudge('judgeC', 0,    1.15, 0);   // center — larger
+    createJudge('judgeL', -1.7, 0.95, 30);  // left
+    createJudge('judgeR', 1.7,  0.95, 60);  // right
 
     // ── Witness Stand ────────────────────────────────────────────────────────
     const witnessBase = MeshBuilder.CreateBox('witnessBase', { width: 1.8, height: 0.3, depth: 1.8 }, scene);
