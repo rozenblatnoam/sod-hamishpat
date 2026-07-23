@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { CourtroomScene } from './CourtroomScene';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
 import { scorm } from './scorm/ScormAPI';
@@ -67,7 +68,8 @@ type AppScreen =
   | { name: 'lesson'; room: RoomData; lesson: LessonData }
   | { name: 'case'; room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number }
   | { name: 'teacher-dashboard' }
-  | { name: 'leaderboard' };
+  | { name: 'leaderboard' }
+  | { name: 'courtroom'; room: RoomData };
 
 // ─── Splash ────────────────────────────────────────────────────────────────
 function SplashScreen({ onDone }: { onDone: () => void }) {
@@ -465,9 +467,9 @@ function UserStrip({ user, isTeacher, onDashboard, onLogout }: {
 }
 
 // ─── Home ──────────────────────────────────────────────────────────────────
-function HomeScreen({ progress, onSelectRoom, onShowIntro, auth, onDashboard, onLogout, teacherMode }: {
+function HomeScreen({ progress, onSelectRoom, onShowIntro, onEnterCourtroom, auth, onDashboard, onLogout, teacherMode }: {
   progress: Progress; onSelectRoom: (r: RoomData) => void;
-  onShowIntro: () => void; auth: AuthState;
+  onShowIntro: () => void; onEnterCourtroom: (r: RoomData) => void; auth: AuthState;
   onDashboard?: () => void; onLogout: () => void;
   teacherMode?: boolean;
 }) {
@@ -487,6 +489,7 @@ function HomeScreen({ progress, onSelectRoom, onShowIntro, auth, onDashboard, on
           ? <p className="home-tagline teacher-mode-badge">🎓 מצב עיון מורה — לצפייה בלבד</p>
           : <p className="home-tagline">למד, חקור, פסוק — הפוך לדיין!</p>}
         {!teacherMode && <button className="home-how-btn" onClick={onShowIntro}>❓ כיצד משחקים</button>}
+        {!teacherMode && <button className="home-courtroom-btn" onClick={() => onEnterCourtroom(ACTIVE_ROOMS[0])}>🏛️ כנס לאולם 3D (בטא)</button>}
       </div>
 
       {!teacherMode && done > 0 && (
@@ -1333,10 +1336,19 @@ export default function App() {
 
     const tMode = teacherBrowse && isTeacher;
 
+    if (screen.name === 'courtroom') return (
+      <CourtroomScene
+        roomName={screen.room.titleHe}
+        onClose={() => setScreen({ name: 'home' })}
+        onEnterCase={() => setScreen({ name: 'room', room: screen.room })}
+      />
+    );
+
     if (screen.name === 'home') return (
       <HomeScreen progress={progress} teacherMode={tMode} auth={auth}
         onSelectRoom={r => setScreen({ name: 'room', room: r })}
         onShowIntro={() => setScreen({ name: 'intro' })}
+        onEnterCourtroom={r => setScreen({ name: 'courtroom', room: r })}
         onDashboard={isTeacher ? () => setScreen({ name: 'teacher-dashboard' }) : undefined}
         onLogout={handleLogout} />
     );
