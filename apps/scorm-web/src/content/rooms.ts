@@ -1,17 +1,17 @@
 import { RoomData } from './types';
 
 export const ROOM_ACHIEVEMENTS: Record<number, { titleHe: string; icon: string; description: string }> = {
-  1: { titleHe: 'מומחה אבידה ומציאה', icon: '🔍', description: 'השלמת את כל תיקי אולם האבידות' },
-  2: { titleHe: 'מומחה שומרים', icon: '🛡️', description: 'השלמת את כל תיקי חדר השומרים' },
-  3: { titleHe: 'מומחה שכר פועלים', icon: '👷', description: 'השלמת את כל תיקי בית הפועלים' },
-  4: { titleHe: 'מומחה גרמא', icon: '⚙️', description: 'השלמת את כל תיקי חדר הגרמא' },
-  5: { titleHe: 'מומחה נזקי בור', icon: '🕳️', description: 'השלמת את כל תיקי חצר הבור' },
-  6: { titleHe: 'מומחה עשיית עושר', icon: '💰', description: 'השלמת את כל תיקי חדר עשיית העושר' },
+  1: { titleHe: 'מומחה אבידה ומציאה', icon: '🔍', description: 'פתרת את כל תיקי חדר 001 — תעלומת האבידה' },
+  2: { titleHe: 'מומחה שומרים', icon: '🛡️', description: 'פתרת את כל תיקי חדר 002 — תעלומת השומר' },
+  3: { titleHe: 'מומחה שכר פועלים', icon: '👷', description: 'פתרת את כל תיקי חדר 003 — תעלומת הפועל' },
+  4: { titleHe: 'מומחה גרמא', icon: '⚙️', description: 'פתרת את כל תיקי חדר 004 — תעלומת הנזק' },
+  5: { titleHe: 'מומחה נזקי בור', icon: '🕳️', description: 'פתרת את כל תיקי חדר 005 — תעלומת הבור' },
+  6: { titleHe: 'מומחה עשיית עושר', icon: '💰', description: 'פתרת את כל תיקי חדר 006 — תעלומת ההתעשרות' },
 };
 
 export const ROOMS: RoomData[] = [
   {
-    id: 'room-1', order: 1, titleHe: 'אולם האבידות', topic: 'אבדה ומציאה',
+    id: 'room-1', order: 1, titleHe: 'חדר 001 — תעלומת האבידה', topic: 'אבדה ומציאה',
     description: 'בחדר זה תלמד על חוקי אבדה ומציאה', icon: '🔍', color: '#1a3a6e',
     lessons: [
       {
@@ -89,7 +89,7 @@ export const ROOMS: RoomData[] = [
     ],
   },
   {
-    id: 'room-2', order: 2, titleHe: 'חדר השומרים', topic: 'שומרים',
+    id: 'room-2', order: 2, titleHe: 'חדר 002 — תעלומת השומר', topic: 'שומרים',
     description: 'גלה את ההבדלים בין סוגי השומרים', icon: '🛡️', color: '#1a4a2e',
     lessons: [
       {
@@ -238,7 +238,7 @@ export const ROOMS: RoomData[] = [
 
   // ─── ROOM 3: שכיר ושליח ──────────────────────────────────────────────────────
   {
-    id: 'room-3', order: 3, titleHe: 'בית הפועלים', topic: 'שכיר ושליח',
+    id: 'room-3', order: 3, titleHe: 'חדר 003 — תעלומת הפועל', topic: 'שכיר ושליח',
     description: 'מה קורה כשהשליח הבטיח לפועלים יותר ממה שהמעסיק הרשה?', icon: '👷', color: '#3a1a6b',
     lessons: [
       {
@@ -316,7 +316,7 @@ export const ROOMS: RoomData[] = [
 
   // ─── ROOM 4: גרמא בניזקין ────────────────────────────────────────────────────
   {
-    id: 'room-4', order: 4, titleHe: 'חדר הגרמא', topic: 'גרמא בניזקין',
+    id: 'room-4', order: 4, titleHe: 'חדר 004 — תעלומת הנזק', topic: 'גרמא בניזקין',
     description: 'מתי נזק עקיף פוטר מתשלום — ומתי עדיין יש חיוב מוסרי?', icon: '⚙️', color: '#6b1a1a',
     lessons: [
       {
@@ -404,7 +404,7 @@ export const ROOMS: RoomData[] = [
 
   // ─── ROOM 5: נזקי בור ────────────────────────────────────────────────────────
   {
-    id: 'room-5', order: 5, titleHe: 'חצר הבור', topic: 'נזקי בור',
+    id: 'room-5', order: 5, titleHe: 'חדר 005 — תעלומת הבור', topic: 'נזקי בור',
     description: 'מתי אחראי על נזק שגרם מכשול שהשארת ברשות הרבים?', icon: '🕳️', color: '#1a3a6e',
     lessons: [
       {
@@ -491,7 +491,7 @@ export const ROOMS: RoomData[] = [
 
   // ─── ROOM 6: עשיית עושר שלא במשפט ────────────────────────────────────────────
   {
-    id: 'room-6', order: 6, titleHe: 'חדר עשיית העושר', topic: 'עשיית עושר שלא במשפט',
+    id: 'room-6', order: 6, titleHe: 'חדר 006 — תעלומת ההתעשרות', topic: 'עשיית עושר שלא במשפט',
     description: 'מכרת רכוש של מישהו אחר ברווח — למי שייך הרווח?', icon: '💰', color: '#5c4a1a',
     lessons: [
       {
