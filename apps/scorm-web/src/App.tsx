@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CourtroomGame } from './CourtroomGame';
+import { SplashScreen } from './SplashScreen';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
@@ -71,29 +72,6 @@ type AppScreen =
   | { name: 'teacher-dashboard' }
   | { name: 'leaderboard' }
   | { name: 'courtroom'; room: RoomData };
-
-// ─── Splash ────────────────────────────────────────────────────────────────
-function SplashScreen({ onDone }: { onDone: () => void }) {
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 100);
-    const t2 = setTimeout(() => setPhase(2), 700);
-    const t3 = setTimeout(() => setPhase(3), 1200);
-    const t4 = setTimeout(() => onDone(), 3000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [onDone]);
-  return (
-    <div className="splash" onClick={onDone}>
-      <div className={`splash-logo-img ${phase >= 1 ? 'splash-show' : ''}`}>
-        <img src="./logo.png" alt="סוד המשפט" />
-      </div>
-      <div className={`splash-title ${phase >= 2 ? 'splash-show' : ''}`}>סוד המשפט</div>
-      <div className={`splash-sub ${phase >= 2 ? 'splash-show' : ''}`}>תוכנית דיינים צעירים</div>
-      {phase >= 3 && <div className="splash-bar-wrap"><div className="splash-bar" /></div>}
-      <div className={`splash-tap ${phase >= 3 ? 'splash-show' : ''}`}>לחץ לדילוג</div>
-    </div>
-  );
-}
 
 // ─── Login ─────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (auth: AuthState) => void }) {
