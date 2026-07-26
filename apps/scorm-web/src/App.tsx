@@ -462,8 +462,10 @@ function HomeScreen({ progress, onSelectRoom, onShowIntro, onEnterCourtroom, aut
       <div className="home-hero">
         <HomeCourtArch />
         <div className="home-logo-wrap"><img src="./logo.png" alt="סוד המשפט" className="home-logo-img" /></div>
-        <h1 className="home-title">סוד המשפט</h1>
-        <h2 className="home-subtitle">תוכנית דיינים צעירים</h2>
+        <div className="home-nameplate">
+          <h1 className="home-title">סוד המשפט</h1>
+        </div>
+        <h2 className="home-subtitle">תוכנית דיינים צעירים · חדר בריחה משפטי</h2>
         {teacherMode
           ? <p className="home-tagline teacher-mode-badge">🎓 מצב עיון מורה — לצפייה בלבד</p>
           : <p className="home-tagline">למד, חקור, פסוק — הפוך לדיין!</p>}
