@@ -3,6 +3,7 @@ import { CourtroomScene } from './CourtroomScene';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { apiGetVideoUrl } from './api';
 import type { RoomData, CaseData, Verdict } from './content/types';
+import { VERDICT_META, MIN_REASONING } from './content/types';
 
 interface Progress {
   completedCases: string[];
@@ -17,12 +18,6 @@ interface Props {
   onCaseComplete: (caseId: string, reasoning: string, hintUsed: boolean) => void;
 }
 
-const VERDICT_META: Record<Verdict, { label: string; icon: string; color: string }> = {
-  liable:           { label: 'חייב',       icon: '❌', color: '#c0392b' },
-  exempt:           { label: 'פטור',        icon: '✅', color: '#27ae60' },
-  partially_liable: { label: 'חייב חלקית', icon: '⚖️', color: '#e67e22' },
-};
-
 type Phase    = 'scene' | 'cases' | 'case';
 type CaseStep = 'entry' | 'scenario' | 'verdict' | 'result';
 
@@ -32,8 +27,6 @@ const CASE_PHASES: { key: CaseStep; icon: string; label: string }[] = [
   { key: 'verdict',  icon: '🧩', label: 'פסיקה' },
   { key: 'result',   icon: '🗝️', label: 'גילוי' },
 ];
-
-const MIN_REASONING = 15;
 
 export function CourtroomGame({ room, progress, token, onClose, onCaseComplete }: Props) {
   const isMobile = typeof window !== 'undefined' &&

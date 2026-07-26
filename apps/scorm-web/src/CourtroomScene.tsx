@@ -15,7 +15,12 @@ interface Props {
 
 export function CourtroomScene({ roomName, onClose, onEnterCase }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const onEnterCaseRef = useRef(onEnterCase);
   const [hint, setHint] = useState('לחץ על דוכן העדים כדי להתחיל');
+
+  // Keep ref in sync so the Babylon ActionManager always calls the latest version
+  // without needing to tear down and rebuild the entire 3D scene on every render.
+  useEffect(() => { onEnterCaseRef.current = onEnterCase; }, [onEnterCase]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -256,7 +261,7 @@ export function CourtroomScene({ roomName, onClose, onEnterCase }: Props) {
       })
     );
     witnessBox.actionManager.registerAction(
-      new ExecuteCodeAction(ActionManager.OnPickTrigger, () => onEnterCase())
+      new ExecuteCodeAction(ActionManager.OnPickTrigger, () => onEnterCaseRef.current())
     );
 
     engine.runRenderLoop(() => scene.render());
@@ -267,7 +272,7 @@ export function CourtroomScene({ roomName, onClose, onEnterCase }: Props) {
       window.removeEventListener('resize', onResize);
       engine.dispose();
     };
-  }, [onEnterCase]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- scene is built once; callbacks use refs
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#080508' }}>

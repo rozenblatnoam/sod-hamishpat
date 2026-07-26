@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,7 +22,7 @@ export class VideosController {
   @Get('signed/:filename')
   @UseGuards(JwtAuthGuard)
   async getSignedUrl(@Param('filename') filename: string) {
-    if (!ALLOWED.has(filename)) return { error: 'not found' };
+    if (!ALLOWED.has(filename)) throw new NotFoundException('Video not found');
     const url = await getSignedUrl(
       this.s3,
       new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: filename }),

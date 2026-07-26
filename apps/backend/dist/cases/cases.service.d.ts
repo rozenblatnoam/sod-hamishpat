@@ -12,6 +12,7 @@ export declare class CasesService {
     private lessons;
     private rooms;
     private achievements;
+    private readonly logger;
     constructor(cases: Repository<Case>, progress: Repository<Progress>, users: Repository<User>, lessons: Repository<Lesson>, rooms: Repository<Room>, achievements: Repository<Achievement>);
     findByLesson(lessonId: string): Promise<Case[]>;
     findOne(id: string): Promise<Case>;

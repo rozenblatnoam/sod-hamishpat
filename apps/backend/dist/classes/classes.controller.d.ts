@@ -31,6 +31,7 @@ export declare class ClassesController {
         score: number;
         level: string;
         classCode: string | null;
+        completedRooms: number;
     }[]>;
     getRoomsOverview(): Promise<{
         id: string;

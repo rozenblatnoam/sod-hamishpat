@@ -10,13 +10,6 @@ export interface AuthUser {
   classCode?: string | null;
 }
 
-export interface ClassStats {
-  totalStudents: number;
-  avgScore: number;
-  avgCompletion: number;
-  students: { id: string; name: string; score: number; level: string; completedRooms: number; completedCases: number }[];
-}
-
 export interface ClassRoom {
   id: string;
   name: string;
@@ -45,14 +38,6 @@ export async function apiGoogleLogin(idToken: string): Promise<{ token: string; 
     body: JSON.stringify({ idToken }),
   });
   if (!res.ok) throw new Error('כניסה עם Google נכשלה — נסה שוב');
-  return res.json();
-}
-
-export async function apiGetClassStats(token: string): Promise<ClassStats> {
-  const res = await fetch(`${API}/teacher/class-stats`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('שגיאה בטעינת נתוני הכיתה');
   return res.json();
 }
 

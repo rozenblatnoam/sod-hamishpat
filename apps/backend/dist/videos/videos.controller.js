@@ -34,7 +34,7 @@ let VideosController = class VideosController {
     }
     async getSignedUrl(filename) {
         if (!ALLOWED.has(filename))
-            return { error: 'not found' };
+            throw new common_1.NotFoundException('Video not found');
         const url = await (0, s3_request_presigner_1.getSignedUrl)(this.s3, new client_s3_1.GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: filename }), { expiresIn: 7200 });
         return { url };
     }

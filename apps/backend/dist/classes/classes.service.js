@@ -33,12 +33,14 @@ let ClassesService = class ClassesService {
         this.cases = cases;
     }
     async generateCode() {
-        while (true) {
+        const MAX_ATTEMPTS = 100;
+        for (let i = 0; i < MAX_ATTEMPTS; i++) {
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             const exists = await this.classes.findOne({ where: { code } });
             if (!exists)
                 return code;
         }
+        throw new Error('Failed to generate unique class code after maximum attempts');
     }
     async createClass(teacher, name) {
         const code = await this.generateCode();
@@ -47,10 +49,18 @@ let ClassesService = class ClassesService {
     }
     async getClasses(teacher) {
         const classList = await this.classes.find({ where: { teacherId: teacher.id } });
-        return Promise.all(classList.map(async (cls) => {
-            const studentCount = await this.users.count({ where: { classCode: cls.code } });
-            return { ...cls, studentCount };
-        }));
+        if (!classList.length)
+            return [];
+        const codes = classList.map((c) => c.code);
+        const counts = await this.users
+            .createQueryBuilder('u')
+            .select('u.classCode', 'code')
+            .addSelect('COUNT(*)', 'count')
+            .where('u.classCode IN (:...codes)', { codes })
+            .groupBy('u.classCode')
+            .getRawMany();
+        const countMap = new Map(counts.map((r) => [r.code, parseInt(r.count, 10)]));
+        return classList.map((cls) => ({ ...cls, studentCount: countMap.get(cls.code) ?? 0 }));
     }
     async deleteClass(teacher, classId) {
         const cls = await this.classes.findOne({ where: { id: classId, teacherId: teacher.id } });
@@ -101,27 +111,47 @@ let ClassesService = class ClassesService {
             score: s.score,
             level: constants_1.LEVEL_LABELS[s.level] ?? s.level,
             classCode: s.classCode,
+            completedRooms: s.scormProgress?.completedRooms?.length ?? 0,
         }))
             .sort((a, b) => b.score - a.score);
     }
     async getRoomsOverview() {
         const allRooms = await this.rooms.find({ order: { order: 'ASC' } });
-        return Promise.all(allRooms.map(async (room) => {
-            const roomLessons = await this.lessons.find({ where: { roomId: room.id } });
-            const caseCount = roomLessons.length > 0
-                ? await this.cases.count({ where: { lessonId: (0, typeorm_2.In)(roomLessons.map((l) => l.id)) } })
-                : 0;
+        if (!allRooms.length)
+            return [];
+        const allLessons = await this.lessons.find({
+            where: { roomId: (0, typeorm_2.In)(allRooms.map((r) => r.id)) },
+            order: { order: 'ASC' },
+        });
+        const lessonIds = allLessons.map((l) => l.id);
+        const caseCounts = lessonIds.length > 0
+            ? await this.cases
+                .createQueryBuilder('c')
+                .select('c.lessonId', 'lessonId')
+                .addSelect('COUNT(*)', 'count')
+                .where('c.lessonId IN (:...ids)', { ids: lessonIds })
+                .groupBy('c.lessonId')
+                .getRawMany()
+            : [];
+        const caseCountMap = new Map(caseCounts.map((r) => [r.lessonId, parseInt(r.count, 10)]));
+        const lessonsByRoom = new Map();
+        for (const lesson of allLessons) {
+            const list = lessonsByRoom.get(lesson.roomId) ?? [];
+            list.push(lesson);
+            lessonsByRoom.set(lesson.roomId, list);
+        }
+        return allRooms.map((room) => {
+            const roomLessons = lessonsByRoom.get(room.id) ?? [];
+            const caseCount = roomLessons.reduce((sum, l) => sum + (caseCountMap.get(l.id) ?? 0), 0);
             return {
                 id: room.id,
                 titleHe: room.titleHe,
                 topic: room.topic,
                 lessonCount: roomLessons.length,
                 caseCount,
-                lessons: roomLessons
-                    .sort((a, b) => a.order - b.order)
-                    .map((l) => ({ id: l.id, title: l.title, order: l.order })),
+                lessons: roomLessons.map((l) => ({ id: l.id, title: l.title, order: l.order })),
             };
-        }));
+        });
     }
     async joinClass(student, code) {
         const cls = await this.classes.findOne({ where: { code: code.toUpperCase() } });
@@ -131,15 +161,11 @@ let ClassesService = class ClassesService {
         return { success: true, className: cls.name };
     }
     async countTotalCases() {
-        const allRooms = await this.rooms.find();
-        let total = 0;
-        for (const room of allRooms) {
-            const roomLessons = await this.lessons.find({ where: { roomId: room.id } });
-            if (roomLessons.length > 0) {
-                total += await this.cases.count({ where: { lessonId: (0, typeorm_2.In)(roomLessons.map((l) => l.id)) } });
-            }
-        }
-        return total;
+        const result = await this.cases
+            .createQueryBuilder('c')
+            .select('COUNT(*)', 'total')
+            .getRawOne();
+        return parseInt(result?.total ?? '0', 10);
     }
 };
 exports.ClassesService = ClassesService;

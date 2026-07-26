@@ -80,7 +80,7 @@ let AuthService = class AuthService {
         return this.users.findOne({ where: { id } });
     }
     sanitize(user) {
-        const { passwordHash, ...rest } = user;
+        const { passwordHash: _pw, ...rest } = user;
         return rest;
     }
 };

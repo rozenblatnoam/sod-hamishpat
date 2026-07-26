@@ -43,11 +43,6 @@ __decorate([
 ], RegisterDto.prototype, "school", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['student', 'teacher']),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "role", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "class", void 0);
 class LoginDto {

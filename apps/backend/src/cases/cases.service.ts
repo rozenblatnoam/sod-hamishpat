@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Case } from './case.entity';
@@ -7,18 +7,12 @@ import { User } from '../users/user.entity';
 import { Lesson } from '../lessons/lesson.entity';
 import { Room } from '../rooms/room.entity';
 import { Achievement } from '../achievements/achievement.entity';
-import { POINTS, SCORE_THRESHOLDS } from '../shared/constants';
-
-const LEVEL_ORDER_ARR = [
-  'student',
-  'trainee_judge',
-  'judge',
-  'chief_judge',
-  'expert_judge',
-] as const;
+import { LEVEL_ORDER, POINTS, SCORE_THRESHOLDS } from '../shared/constants';
 
 @Injectable()
 export class CasesService {
+  private readonly logger = new Logger(CasesService.name);
+
   constructor(
     @InjectRepository(Case) private cases: Repository<Case>,
     @InjectRepository(Progress) private progress: Repository<Progress>,
@@ -110,7 +104,9 @@ export class CasesService {
 
           await this.progress.save(prog);
         }
-      } catch (_e) {}
+      } catch (e) {
+        this.logger.error('Failed to update room completion / achievement after verdict', e);
+      }
     }
 
     return {
@@ -123,8 +119,8 @@ export class CasesService {
   }
 
   private updateLevel(user: User) {
-    for (let i = LEVEL_ORDER_ARR.length - 1; i >= 0; i--) {
-      const lvl = LEVEL_ORDER_ARR[i];
+    for (let i = LEVEL_ORDER.length - 1; i >= 0; i--) {
+      const lvl = LEVEL_ORDER[i];
       if (user.score >= SCORE_THRESHOLDS[lvl]) {
         user.level = lvl;
         break;

@@ -4,9 +4,10 @@ import { SplashScreen } from './SplashScreen';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
 import type { RoomData, LessonData, CaseData, Verdict } from './content/types';
+import { VERDICT_META, MIN_REASONING } from './content/types';
 import { scorm } from './scorm/ScormAPI';
 import { apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, apiJoinClass, apiGetMyClasses, apiCreateClass, apiGetLeaderboard, type AuthUser, type ClassRoom, type LeaderboardStudent } from './api';
-import { signInWithGoogle } from './firebase';
+import { signInWithGoogle, firebaseSignOut } from './firebase';
 import './index.css';
 
 const ROOM_LIMIT = parseInt((import.meta.env.VITE_ROOM_LIMIT as string) || '99');
@@ -242,18 +243,18 @@ function TeacherDashboard({ auth, onBrowse, onLogout, onLeaderboard }: {
   const [codeCopied, setCodeCopied] = useState(false);
   const [sortBy, setSortBy] = useState<'score' | 'rooms' | 'name'>('score');
 
-  function reload() {
+  const reload = useCallback(() => {
     setLoading(true); setError('');
     Promise.all([apiGetMyClasses(auth.token), apiGetLeaderboard(auth.token)])
       .then(([classes, lb]) => {
         setMyClass(classes[0] ?? null);
         setStudents(lb);
       })
-      .catch(e => setError(e.message))
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false));
-  }
+  }, [auth.token]);
 
-  useEffect(() => { reload(); }, [auth.token]);
+  useEffect(() => { reload(); }, [reload]);
 
   async function handleCreateClass() {
     if (!newClassName.trim()) return;
@@ -261,7 +262,7 @@ function TeacherDashboard({ auth, onBrowse, onLogout, onLeaderboard }: {
     try {
       const cls = await apiCreateClass(auth.token, newClassName.trim());
       setMyClass(cls); setNewClassName('');
-    } catch (e: any) { setError(e.message); }
+    } catch (e) { setError((e as Error).message); }
     finally { setCreating(false); }
   }
 
@@ -672,11 +673,6 @@ function LessonScreen({ room, lesson, progress, teacherMode, auth, onBack, onSel
 }
 
 // ─── Case (teacher read-only view) ────────────────────────────────────────
-const VERDICT_META: Record<Verdict, { label: string; icon: string; color: string }> = {
-  liable:           { label: 'חייב',       icon: '❌', color: '#c0392b' },
-  exempt:           { label: 'פטור',        icon: '✅', color: '#27ae60' },
-  partially_liable: { label: 'חייב חלקית', icon: '⚖️', color: '#e67e22' },
-};
 
 // ─── Speech synthesis ──────────────────────────────────────────────────────
 function useSpeech() {
@@ -770,8 +766,8 @@ function CaseFigures({ roomIcon }: { roomIcon: string }) {
   );
 }
 
-function TeacherCaseView({ caseData, caseIndex, lesson: _lesson, onBack, onProject }: {
-  caseData: CaseData; caseIndex: number; lesson: LessonData;
+function TeacherCaseView({ caseData, caseIndex, onBack, onProject }: {
+  caseData: CaseData; caseIndex: number;
   onBack: () => void; onProject?: () => void;
 }) {
   return (
@@ -823,14 +819,13 @@ function TeacherCaseView({ caseData, caseIndex, lesson: _lesson, onBack, onProje
 type CaseStep = 'scenario' | 'investigate' | 'verdict' | 'result';
 const STEP_LABELS: Record<CaseStep, string> = { scenario: 'תיאור', investigate: 'חקירה', verdict: 'פסיקה', result: 'תוצאה' };
 const ALL_STEPS: CaseStep[] = ['scenario', 'investigate', 'verdict', 'result'];
-const MIN_REASONING = 15;
 
 function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, streak, onComplete, onBack, onProject }: {
   room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number;
   progress: Progress; teacherMode?: boolean; streak?: number;
   onComplete: (reasoning: string, hintUsed: boolean) => void; onBack: () => void; onProject?: () => void;
 }) {
-  if (teacherMode) return <TeacherCaseView caseData={caseData} caseIndex={caseIndex} lesson={lesson} onBack={onBack} onProject={onProject} />;
+  if (teacherMode) return <TeacherCaseView caseData={caseData} caseIndex={caseIndex} onBack={onBack} onProject={onProject} />;
 
   const alreadyDone = progress.completedCases.includes(caseData.id);
   const savedReasoning = progress.reasoning[caseData.id] ?? '';
@@ -1241,6 +1236,7 @@ export default function App() {
     setAuth(null);
     setTeacherBrowse(false);
     setScreen({ name: 'login' });
+    firebaseSignOut().catch(() => {});
   }
 
   const isTeacher = auth?.user.role === 'teacher' || auth?.user.role === 'admin';
@@ -1265,7 +1261,7 @@ export default function App() {
         if (count === 10) setTimeout(() => showToast('🎯 10 פסיקות! ממשיכים בקצב!', 'success'), 700);
         else if (count === 19) setTimeout(() => showToast('⭐ חצי הדרך — 19 תיקים מאחורינו!', 'success'), 700);
         else if (count === 30) setTimeout(() => showToast('🏃 עוד 8 תיקים — כמעט גמרנו!', 'success'), 700);
-        else if (count === TOTAL_CASES) setTimeout(() => showToast('🏆 כל 38 התיקים הושלמו!', 'success'), 700);
+        else if (count === TOTAL_CASES) setTimeout(() => showToast(`🏆 כל ${TOTAL_CASES} התיקים הושלמו!`, 'success'), 700);
       }
       if (roomNowComplete && !prev.completedRooms.includes(roomId)) {
         const ach = ROOM_ACHIEVEMENTS[roomOrder];

@@ -80,7 +80,7 @@ export class AuthService {
   }
 
   sanitize(user: User) {
-    const { passwordHash, ...rest } = user as any;
+    const { passwordHash: _pw, ...rest } = user;
     return rest;
   }
 }

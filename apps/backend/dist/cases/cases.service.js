@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var CasesService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CasesService = void 0;
 const common_1 = require("@nestjs/common");
@@ -23,14 +24,7 @@ const lesson_entity_1 = require("../lessons/lesson.entity");
 const room_entity_1 = require("../rooms/room.entity");
 const achievement_entity_1 = require("../achievements/achievement.entity");
 const constants_1 = require("../shared/constants");
-const LEVEL_ORDER_ARR = [
-    'student',
-    'trainee_judge',
-    'judge',
-    'chief_judge',
-    'expert_judge',
-];
-let CasesService = class CasesService {
+let CasesService = CasesService_1 = class CasesService {
     constructor(cases, progress, users, lessons, rooms, achievements) {
         this.cases = cases;
         this.progress = progress;
@@ -38,6 +32,7 @@ let CasesService = class CasesService {
         this.lessons = lessons;
         this.rooms = rooms;
         this.achievements = achievements;
+        this.logger = new common_1.Logger(CasesService_1.name);
     }
     findByLesson(lessonId) {
         return this.cases.find({
@@ -108,7 +103,9 @@ let CasesService = class CasesService {
                     await this.progress.save(prog);
                 }
             }
-            catch (_e) { }
+            catch (e) {
+                this.logger.error('Failed to update room completion / achievement after verdict', e);
+            }
         }
         return {
             correct,
@@ -119,8 +116,8 @@ let CasesService = class CasesService {
         };
     }
     updateLevel(user) {
-        for (let i = LEVEL_ORDER_ARR.length - 1; i >= 0; i--) {
-            const lvl = LEVEL_ORDER_ARR[i];
+        for (let i = constants_1.LEVEL_ORDER.length - 1; i >= 0; i--) {
+            const lvl = constants_1.LEVEL_ORDER[i];
             if (user.score >= constants_1.SCORE_THRESHOLDS[lvl]) {
                 user.level = lvl;
                 break;
@@ -129,7 +126,7 @@ let CasesService = class CasesService {
     }
 };
 exports.CasesService = CasesService;
-exports.CasesService = CasesService = __decorate([
+exports.CasesService = CasesService = CasesService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(case_entity_1.Case)),
     __param(1, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),

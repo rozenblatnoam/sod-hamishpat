@@ -4,47 +4,46 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
 import { UserLevel } from '../shared/constants';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column()
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({ default: '' })
-  school: string;
+  school!: string;
 
   @Column({ default: '' })
-  class: string;
+  class!: string;
 
   @Column({ type: 'varchar', default: 'student' })
-  level: UserLevel;
+  level!: UserLevel;
 
   @Column({ default: 0 })
-  score: number;
+  score!: number;
 
   @Column({ type: 'varchar', default: 'student' })
-  role: 'student' | 'teacher' | 'admin';
+  role!: 'student' | 'teacher' | 'admin';
 
   @Column({ type: 'varchar', nullable: true, default: null })
-  classCode: string | null;
+  classCode!: string | null;
 
   @Column({ nullable: true })
-  firebaseUid: string;
+  firebaseUid!: string;
 
   @Column({ type: 'jsonb', nullable: true, default: null })
-  scormProgress: {
+  scormProgress!: {
     completedCases: string[];
     completedRooms: string[];
     score: number;
@@ -52,8 +51,8 @@ export class User {
   } | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

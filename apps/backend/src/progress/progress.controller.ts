@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ProgressService } from './progress.service';
@@ -17,6 +18,7 @@ export class ProgressController {
   }
 
   @Post('sync')
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
   syncScorm(
     @Body() body: { hintsUsed?: number },
     @CurrentUser() user: any,

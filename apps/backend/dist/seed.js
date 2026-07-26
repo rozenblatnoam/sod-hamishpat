@@ -10,7 +10,7 @@ const AppDataSource = new typeorm_1.DataSource({
     password: process.env.DB_PASS ?? 'postgres',
     database: process.env.DB_NAME ?? 'dyanim',
     entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    synchronize: true,
+    synchronize: false,
 });
 async function seed() {
     await AppDataSource.initialize();

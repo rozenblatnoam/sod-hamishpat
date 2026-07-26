@@ -41,6 +41,7 @@ export declare class ClassesService {
         score: number;
         level: string;
         classCode: string | null;
+        completedRooms: number;
     }[]>;
     getRoomsOverview(): Promise<{
         id: string;

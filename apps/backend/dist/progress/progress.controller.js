@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProgressController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const throttler_1 = require("@nestjs/throttler");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/current-user.decorator");
 const progress_service_1 = require("./progress.service");
@@ -42,6 +43,7 @@ __decorate([
 ], ProgressController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Post)('sync'),
+    (0, throttler_1.Throttle)({ default: { ttl: 60000, limit: 20 } }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),

@@ -4,7 +4,6 @@ declare class RegisterDto {
     email: string;
     password: string;
     school: string;
-    role?: 'student' | 'teacher';
     class?: string;
 }
 declare class LoginDto {
@@ -16,16 +15,92 @@ export declare class AuthController {
     constructor(auth: AuthService);
     register(dto: RegisterDto): Promise<{
         token: string;
-        user: any;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            school: string;
+            class: string;
+            level: import("../shared/constants").UserLevel;
+            score: number;
+            role: "student" | "teacher" | "admin";
+            classCode: string | null;
+            firebaseUid: string;
+            scormProgress: {
+                completedCases: string[];
+                completedRooms: string[];
+                score: number;
+                syncedAt: string;
+            } | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     }>;
     login(dto: LoginDto): Promise<{
         token: string;
-        user: any;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            school: string;
+            class: string;
+            level: import("../shared/constants").UserLevel;
+            score: number;
+            role: "student" | "teacher" | "admin";
+            classCode: string | null;
+            firebaseUid: string;
+            scormProgress: {
+                completedCases: string[];
+                completedRooms: string[];
+                score: number;
+                syncedAt: string;
+            } | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     }>;
     googleLogin(idToken: string): Promise<{
         token: string;
-        user: any;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            school: string;
+            class: string;
+            level: import("../shared/constants").UserLevel;
+            score: number;
+            role: "student" | "teacher" | "admin";
+            classCode: string | null;
+            firebaseUid: string;
+            scormProgress: {
+                completedCases: string[];
+                completedRooms: string[];
+                score: number;
+                syncedAt: string;
+            } | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     }>;
-    me(user: any): any;
+    me(user: any): {
+        id: string;
+        name: string;
+        email: string;
+        school: string;
+        class: string;
+        level: import("../shared/constants").UserLevel;
+        score: number;
+        role: "student" | "teacher" | "admin";
+        classCode: string | null;
+        firebaseUid: string;
+        scormProgress: {
+            completedCases: string[];
+            completedRooms: string[];
+            score: number;
+            syncedAt: string;
+        } | null;
+        createdAt: Date;
+        updatedAt: Date;
+    };
 }
 export {};

@@ -4,7 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, Matches, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, Matches, MinLength } from 'class-validator';
 
 class RegisterDto {
   @IsNotEmpty() name!: string;
@@ -15,7 +15,6 @@ class RegisterDto {
   })
   password!: string;
   @IsNotEmpty() school!: string;
-  @IsOptional() @IsIn(['student', 'teacher']) role?: 'student' | 'teacher';
   @IsOptional()
   class?: string;
 }

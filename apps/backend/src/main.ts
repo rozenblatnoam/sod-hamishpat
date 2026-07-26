@@ -1,14 +1,24 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+
+const logger = new Logger('Bootstrap');
+
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? 'https://sod-hamishpat.netlify.app')
+  .split(',')
+  .map((o) => o.trim());
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: '*',
+    origin: (origin, cb) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS: origin ${origin} not allowed`), false);
+    },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
   });
 
   app.useGlobalPipes(
@@ -30,7 +40,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
-  console.log(`Server running on http://0.0.0.0:${port}`);
+  logger.log(`Server running on http://0.0.0.0:${port}`);
 }
 
 bootstrap();
