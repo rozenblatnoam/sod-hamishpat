@@ -23,6 +23,7 @@ const teacher_module_1 = require("./teacher/teacher.module");
 const classes_module_1 = require("./classes/classes.module");
 const admin_module_1 = require("./admin/admin.module");
 const videos_module_1 = require("./videos/videos.module");
+const registrations_module_1 = require("./registrations/registrations.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -68,6 +69,7 @@ exports.AppModule = AppModule = __decorate([
             classes_module_1.ClassesModule,
             admin_module_1.AdminModule,
             videos_module_1.VideosModule,
+            registrations_module_1.RegistrationsModule,
         ],
     })
 ], AppModule);
