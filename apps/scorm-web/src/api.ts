@@ -31,6 +31,24 @@ function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+export async function apiPublicRegister(data: {
+  name: string;
+  phone: string;
+  email: string;
+  marketingConsent: boolean;
+}): Promise<{ token: string; user: AuthUser }> {
+  const res = await fetch(`${API}/public/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { message?: string }).message ?? 'שגיאה ברישום, נסה שוב');
+  }
+  return res.json();
+}
+
 export async function apiGoogleLogin(idToken: string): Promise<{ token: string; user: AuthUser }> {
   const res = await fetch(`${API}/auth/google`, {
     method: 'POST',

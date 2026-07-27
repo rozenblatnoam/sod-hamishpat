@@ -8,6 +8,7 @@ import { VERDICT_META, MIN_REASONING } from './content/types';
 import { scorm } from './scorm/ScormAPI';
 import { apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, apiJoinClass, apiGetMyClasses, apiCreateClass, apiGetLeaderboard, type AuthUser, type ClassRoom, type LeaderboardStudent } from './api';
 import { signInWithGoogle, firebaseSignOut } from './firebase';
+import { LandingPage } from './LandingPage';
 import './index.css';
 
 const ROOM_LIMIT = parseInt((import.meta.env.VITE_ROOM_LIMIT as string) || '99');
@@ -1183,6 +1184,7 @@ function CertificateModal({ roomTitle, achievement, userName, onClose }: {
 
 // ─── Root App ──────────────────────────────────────────────────────────────
 export default function App() {
+  const [showLanding, setShowLanding] = useState(() => !localStorage.getItem('sod_registered'));
   const [screen, setScreen] = useState<AppScreen>({ name: 'splash' });
   const [auth, setAuth] = useState<AuthState | null>(loadAuth);
   const [progress, setProgress] = useState<Progress>({ completedCases: [], completedRooms: [], reasoning: {}, usedHints: [] });
@@ -1281,6 +1283,16 @@ export default function App() {
   }
 
   const render = () => {
+    if (showLanding) return (
+      <LandingPage onComplete={(authState) => {
+        localStorage.setItem('sod_registered', '1');
+        saveAuth(authState);
+        setAuth(authState);
+        setProgress(loadProgress(authState.user.id));
+        setShowLanding(false);
+        setScreen({ name: 'home' });
+      }} />
+    );
     if (screen.name === 'splash') return <SplashScreen onDone={afterSplash} />;
     if (screen.name === 'login') return <LoginScreen onLogin={handleLogin} />;
     if (!auth) return <LoginScreen onLogin={handleLogin} />;
