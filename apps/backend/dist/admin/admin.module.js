@@ -15,12 +15,13 @@ const user_entity_1 = require("../users/user.entity");
 const room_entity_1 = require("../rooms/room.entity");
 const progress_entity_1 = require("../progress/progress.entity");
 const class_entity_1 = require("../classes/class.entity");
+const registration_entity_1 = require("../registrations/registration.entity");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, room_entity_1.Room, progress_entity_1.Progress, class_entity_1.ClassRoom])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, room_entity_1.Room, progress_entity_1.Progress, class_entity_1.ClassRoom, registration_entity_1.Registration])],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
     })

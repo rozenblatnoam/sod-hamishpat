@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import { User } from '../users/user.entity';
 import { AdminService } from './admin.service';
 export declare class AdminController {
@@ -30,4 +31,6 @@ export declare class AdminController {
     resetProgress(user: User, id: string): Promise<{
         success: boolean;
     }>;
+    getRegistrations(user: User): Promise<import("../registrations/registration.entity").Registration[]>;
+    exportRegistrationsCsv(user: User, res: Response): Promise<void>;
 }

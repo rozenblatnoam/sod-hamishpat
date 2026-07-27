@@ -54,6 +54,17 @@ let AdminController = class AdminController {
         this.guard(user);
         return this.adminService.resetUserProgress(id);
     }
+    getRegistrations(user) {
+        this.guard(user);
+        return this.adminService.getRegistrations();
+    }
+    async exportRegistrationsCsv(user, res) {
+        this.guard(user);
+        const csv = await this.adminService.getRegistrationsCsv();
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="registrations.csv"');
+        res.send('﻿' + csv);
+    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -111,6 +122,21 @@ __decorate([
     __metadata("design:paramtypes", [user_entity_1.User, String]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "resetProgress", null);
+__decorate([
+    (0, common_1.Get)('registrations'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getRegistrations", null);
+__decorate([
+    (0, common_1.Get)('registrations/export.csv'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "exportRegistrationsCsv", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

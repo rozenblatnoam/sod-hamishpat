@@ -20,12 +20,14 @@ const user_entity_1 = require("../users/user.entity");
 const room_entity_1 = require("../rooms/room.entity");
 const progress_entity_1 = require("../progress/progress.entity");
 const class_entity_1 = require("../classes/class.entity");
+const registration_entity_1 = require("../registrations/registration.entity");
 let AdminService = class AdminService {
-    constructor(users, rooms, progress, classes) {
+    constructor(users, rooms, progress, classes, registrations) {
         this.users = users;
         this.rooms = rooms;
         this.progress = progress;
         this.classes = classes;
+        this.registrations = registrations;
     }
     async getStats() {
         const [totalUsers, totalTeachers, totalStudents, totalClasses, totalRooms] = await Promise.all([
@@ -82,6 +84,17 @@ let AdminService = class AdminService {
         await this.users.update(userId, { score: 0 });
         return { success: true };
     }
+    async getRegistrations() {
+        return this.registrations.find({ order: { createdAt: 'DESC' } });
+    }
+    async getRegistrationsCsv() {
+        const rows = await this.registrations.find({ order: { createdAt: 'ASC' } });
+        const header = 'שם,טלפון,אימייל,הסכמה לפרסום,תאריך';
+        const lines = rows.map(r => [r.name, r.phone, r.email, r.marketingConsent ? 'כן' : 'לא', r.createdAt.toISOString()]
+            .map(v => `"${String(v).replace(/"/g, '""')}"`)
+            .join(','));
+        return [header, ...lines].join('\r\n');
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
@@ -90,7 +103,9 @@ exports.AdminService = AdminService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(room_entity_1.Room)),
     __param(2, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
     __param(3, (0, typeorm_1.InjectRepository)(class_entity_1.ClassRoom)),
+    __param(4, (0, typeorm_1.InjectRepository)(registration_entity_1.Registration)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])

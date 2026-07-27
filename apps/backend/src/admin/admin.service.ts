@@ -5,6 +5,7 @@ import { User } from '../users/user.entity';
 import { Room } from '../rooms/room.entity';
 import { Progress } from '../progress/progress.entity';
 import { ClassRoom } from '../classes/class.entity';
+import { Registration } from '../registrations/registration.entity';
 
 @Injectable()
 export class AdminService {
@@ -13,6 +14,7 @@ export class AdminService {
     @InjectRepository(Room) private rooms: Repository<Room>,
     @InjectRepository(Progress) private progress: Repository<Progress>,
     @InjectRepository(ClassRoom) private classes: Repository<ClassRoom>,
+    @InjectRepository(Registration) private registrations: Repository<Registration>,
   ) {}
 
   async getStats() {
@@ -70,5 +72,20 @@ export class AdminService {
     await this.progress.delete({ userId });
     await this.users.update(userId, { score: 0 });
     return { success: true };
+  }
+
+  async getRegistrations() {
+    return this.registrations.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async getRegistrationsCsv(): Promise<string> {
+    const rows = await this.registrations.find({ order: { createdAt: 'ASC' } });
+    const header = 'שם,טלפון,אימייל,הסכמה לפרסום,תאריך';
+    const lines = rows.map(r =>
+      [r.name, r.phone, r.email, r.marketingConsent ? 'כן' : 'לא', r.createdAt.toISOString()]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`)
+        .join(','),
+    );
+    return [header, ...lines].join('\r\n');
   }
 }

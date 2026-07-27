@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Delete, Param, Body, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, UseGuards, ForbiddenException, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { User } from '../users/user.entity';
@@ -53,5 +54,20 @@ export class AdminController {
   resetProgress(@CurrentUser() user: User, @Param('id') id: string) {
     this.guard(user);
     return this.adminService.resetUserProgress(id);
+  }
+
+  @Get('registrations')
+  getRegistrations(@CurrentUser() user: User) {
+    this.guard(user);
+    return this.adminService.getRegistrations();
+  }
+
+  @Get('registrations/export.csv')
+  async exportRegistrationsCsv(@CurrentUser() user: User, @Res() res: Response) {
+    this.guard(user);
+    const csv = await this.adminService.getRegistrationsCsv();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="registrations.csv"');
+    res.send('﻿' + csv); // BOM for Excel Hebrew support
   }
 }
