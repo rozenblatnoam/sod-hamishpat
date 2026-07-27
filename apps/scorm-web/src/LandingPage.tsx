@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { apiPublicRegister, type AuthUser } from './api';
 
 interface AuthState { user: AuthUser; token: string; }
@@ -28,7 +28,7 @@ export function LandingPage({ onComplete }: LandingPageProps) {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -316,6 +316,7 @@ export function LandingPage({ onComplete }: LandingPageProps) {
       {/* Hero */}
       <header className="landing-hero">
         <div className="landing-logos">
+          <img src="./kollel-logo.jpg" alt="כולל ענב" className="landing-game-logo" />
           <img src="./logo.png" alt="סוד המשפט" className="landing-game-logo" />
           <div className="kollel-badge">🕍 כולל ענב גאה להציג</div>
         </div>
