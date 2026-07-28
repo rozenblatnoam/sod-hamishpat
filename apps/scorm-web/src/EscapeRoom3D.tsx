@@ -3,7 +3,7 @@ import {
   Engine, Scene, Vector3, ArcRotateCamera,
   HemisphericLight, PointLight,
   MeshBuilder, StandardMaterial, Color3, Color4,
-  Animation, DynamicTexture, Mesh,
+  Animation, DynamicTexture,
 } from '@babylonjs/core';
 import type { RoomData, LessonData } from './content/types';
 
@@ -323,7 +323,7 @@ export function EscapeRoom3D({ room, progress, coins, onSelectLesson, onBack }: 
       const lPlane = MeshBuilder.CreatePlane(`lp${i}`, { size: 0.8 }, scene);
       lPlane.position.set(nx, 2.55, nz);
       lPlane.material  = lMat;
-      lPlane.billboardMode = Mesh.BILLBOARDMODE_ALL;
+      lPlane.billboardMode = 7;
       labelTexs.push(lTex);
     });
 
