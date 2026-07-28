@@ -9,6 +9,7 @@ import { scorm } from './scorm/ScormAPI';
 import { apiSyncProgress, apiGoogleLogin, apiGetVideoUrl, apiJoinClass, apiGetMyClasses, apiCreateClass, apiGetLeaderboard, type AuthUser, type ClassRoom, type LeaderboardStudent } from './api';
 import { signInWithGoogle, firebaseSignOut } from './firebase';
 import { LandingPage } from './LandingPage';
+import { CASE_HINTS } from './content/hints';
 import './index.css';
 
 const ROOM_LIMIT = parseInt((import.meta.env.VITE_ROOM_LIMIT as string) || '99');
@@ -29,15 +30,16 @@ interface Progress {
   completedRooms: string[];
   reasoning: Record<string, string>;
   usedHints: string[];
+  coins: number;
 }
 
 function progressKey(userId: string) { return `escape_progress_${userId}`; }
 
 function loadProgress(userId: string): Progress {
   const s = scorm.getSuspendData() as Progress | null;
-  if (s?.completedCases) return { completedCases: s.completedCases, completedRooms: s.completedRooms ?? [], reasoning: s.reasoning ?? {}, usedHints: s.usedHints ?? [] };
-  try { const ls = localStorage.getItem(progressKey(userId)); if (ls) { const p = JSON.parse(ls); return { ...p, completedRooms: p.completedRooms ?? [], usedHints: p.usedHints ?? [] } as Progress; } } catch {}
-  return { completedCases: [], completedRooms: [], reasoning: {}, usedHints: [] };
+  if (s?.completedCases) return { completedCases: s.completedCases, completedRooms: s.completedRooms ?? [], reasoning: s.reasoning ?? {}, usedHints: s.usedHints ?? [], coins: s.coins ?? 10 };
+  try { const ls = localStorage.getItem(progressKey(userId)); if (ls) { const p = JSON.parse(ls); return { ...p, completedRooms: p.completedRooms ?? [], usedHints: p.usedHints ?? [], coins: p.coins ?? 10 } as Progress; } } catch {}
+  return { completedCases: [], completedRooms: [], reasoning: {}, usedHints: [], coins: 10 };
 }
 function saveProgress(p: Progress, userId: string) {
   scorm.setSuspendData(p);
@@ -820,10 +822,10 @@ type CaseStep = 'scenario' | 'investigate' | 'verdict' | 'result';
 const STEP_LABELS: Record<CaseStep, string> = { scenario: 'תיאור', investigate: 'חקירה', verdict: 'פסיקה', result: 'תוצאה' };
 const ALL_STEPS: CaseStep[] = ['scenario', 'investigate', 'verdict', 'result'];
 
-function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, streak, onComplete, onBack, onProject }: {
+function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, streak, onComplete, onBuyHint, onBack, onProject }: {
   room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number;
   progress: Progress; teacherMode?: boolean; streak?: number;
-  onComplete: (reasoning: string, hintUsed: boolean) => void; onBack: () => void; onProject?: () => void;
+  onComplete: (reasoning: string, hintUsed: boolean) => void; onBuyHint: () => void; onBack: () => void; onProject?: () => void;
 }) {
   if (teacherMode) return <TeacherCaseView caseData={caseData} caseIndex={caseIndex} onBack={onBack} onProject={onProject} />;
 
@@ -857,7 +859,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
     setJudgeReaction(correct ? 'correct' : 'wrong');
     if (!alreadyDone && correct) {
       onComplete(reasoning.trim(), hintUsed);
-      const xp = hintUsed ? 25 : 50;
+      const xp = hintUsed ? 2 : 3;
       setXpEarned(xp);
       setShowXP(true);
       setTimeout(() => setShowXP(false), 1800);
@@ -878,6 +880,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
       <div className="top-bar">
         <button className="back-btn" onClick={onBack}>← חזרה</button>
         <span className="top-bar-title">תיק {caseIndex + 1} מתוך {lesson.cases.length}</span>
+        <span className="coin-badge">🪙 {progress.coins ?? 0}</span>
       </div>
       <div className="step-bar">
         {ALL_STEPS.map((s, i) => (
@@ -978,13 +981,16 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
             )}
             <div className="hint-section">
               {!hintRevealed ? (
-                <button className="hint-btn" onClick={() => { setHintUsed(true); setHintRevealed(true); }}>
-                  💡 {hintUsed ? 'הצג שוב את הרמז' : 'רמז (−2 נקודות)'}
+                <button
+                  className={`hint-btn${(progress.coins ?? 0) < 2 ? ' hint-btn-disabled' : ''}`}
+                  disabled={(progress.coins ?? 0) < 2}
+                  onClick={() => { setHintUsed(true); setHintRevealed(true); onBuyHint(); }}>
+                  💡 {(progress.coins ?? 0) >= 2 ? 'רמז מהשופט (🪙 2)' : 'אין מספיק מטבעות לרמז'}
                 </button>
               ) : (
                 <div className="hint-box">
-                  <div className="hint-box-header">💡 רמז מהמקורות<span className="hint-penalty"> — −2 נקודות מציונך</span></div>
-                  <p className="hint-box-text">{lesson.sourceContent || lesson.content}</p>
+                  <div className="hint-box-header">💡 רמז מהשופט <span className="hint-penalty">(-2 🪙)</span></div>
+                  <p className="hint-box-text">{CASE_HINTS[caseData.id] || lesson.sourceContent || lesson.content}</p>
                 </div>
               )}
             </div>
@@ -998,7 +1004,7 @@ function CaseScreen({ room, lesson, caseData, caseIndex, progress, teacherMode, 
         {/* RESULT */}
         {step === 'result' && submitted && myVerdict && (
           <div className="case-panel">
-            {showXP && <div className="xp-popup">+{xpEarned} XP ⚖️</div>}
+            {showXP && <div className="xp-popup">+{xpEarned} 🪙</div>}
             <div className={`result-banner${isCorrect ? ' banner-correct' : ' banner-wrong'}`}>
               <span className="result-banner-icon">{isCorrect ? '🎉' : '📚'}</span>
               <span>{isCorrect ? 'פסיקה נכונה! אתה דיין מצוין!' : 'הגמרא פוסקת אחרת — אבל למדת!'}</span>
@@ -1186,7 +1192,7 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(() => !localStorage.getItem('sod_registered'));
   const [screen, setScreen] = useState<AppScreen>({ name: 'splash' });
   const [auth, setAuth] = useState<AuthState | null>(loadAuth);
-  const [progress, setProgress] = useState<Progress>({ completedCases: [], completedRooms: [], reasoning: {}, usedHints: [] });
+  const [progress, setProgress] = useState<Progress>({ completedCases: [], completedRooms: [], reasoning: {}, usedHints: [], coins: 10 });
   const [cert, setCert] = useState<{ roomTitle: string; ach: (typeof ROOM_ACHIEVEMENTS)[number] } | null>(null);
   const [teacherBrowse, setTeacherBrowse] = useState(false);
   const [projecting, setProjecting] = useState<{ room: RoomData; lesson: LessonData; caseIndex: number } | null>(null);
@@ -1254,7 +1260,9 @@ export default function App() {
       const roomNowComplete = allIds.length > 0 && allIds.every(id => newCases.includes(id));
       const newRooms = roomNowComplete && !prev.completedRooms.includes(roomId)
         ? [...prev.completedRooms, roomId] : prev.completedRooms;
-      const next = { completedCases: newCases, completedRooms: newRooms, reasoning: newReasoning, usedHints: newHints };
+      const coinsEarned = prev.completedCases.includes(caseId) ? 0 : (hintUsed ? 2 : 3);
+      const newCoins = (prev.coins ?? 10) + coinsEarned;
+      const next = { completedCases: newCases, completedRooms: newRooms, reasoning: newReasoning, usedHints: newHints, coins: newCoins };
       saveProgress(next, auth.user.id);
       if (!prev.completedCases.includes(caseId)) {
         const count = newCases.length;
@@ -1268,6 +1276,15 @@ export default function App() {
         const ach = ROOM_ACHIEVEMENTS[roomOrder];
         if (ach && room) setTimeout(() => setCert({ roomTitle: room.titleHe, ach }), 500);
       }
+      return next;
+    });
+  }, [auth]);
+
+  const handleBuyHint = useCallback(() => {
+    if (!auth) return;
+    setProgress(prev => {
+      const next = { ...prev, coins: Math.max(0, (prev.coins ?? 0) - 2) };
+      saveProgress(next, auth.user.id);
       return next;
     });
   }, [auth]);
@@ -1360,6 +1377,7 @@ export default function App() {
       <CaseScreen room={screen.room} lesson={screen.lesson} caseData={screen.caseData}
         caseIndex={screen.caseIndex} progress={progress} teacherMode={tMode} streak={sessionStreak}
         onComplete={(r, h) => completeCase(screen.caseData.id, screen.room.id, screen.room.order, r, h)}
+        onBuyHint={handleBuyHint}
         onBack={() => setScreen({ name: 'lesson', room: screen.room, lesson: screen.lesson })}
         onProject={tMode ? () => setProjecting({ room: screen.room, lesson: screen.lesson, caseIndex: screen.caseIndex }) : undefined} />
     );
