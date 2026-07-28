@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CourtroomGame } from './CourtroomGame';
+import { EscapeRoom3D } from './EscapeRoom3D';
 import { SplashScreen } from './SplashScreen';
 import { JudgeCharacter } from './components/JudgeCharacter';
 import { ROOMS, ROOM_ACHIEVEMENTS, TOTAL_CASES } from './content/rooms';
@@ -71,8 +72,9 @@ type AppScreen =
   | { name: 'intro' }
   | { name: 'home' }
   | { name: 'room'; room: RoomData }
-  | { name: 'lesson'; room: RoomData; lesson: LessonData }
-  | { name: 'case'; room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number }
+  | { name: 'escape3d'; room: RoomData }
+  | { name: 'lesson'; room: RoomData; lesson: LessonData; from3d?: boolean }
+  | { name: 'case'; room: RoomData; lesson: LessonData; caseData: CaseData; caseIndex: number; from3d?: boolean }
   | { name: 'teacher-dashboard' }
   | { name: 'leaderboard' }
   | { name: 'courtroom'; room: RoomData };
@@ -1357,11 +1359,21 @@ export default function App() {
 
     if (screen.name === 'home') return (
       <HomeScreen progress={progress} teacherMode={tMode} auth={auth}
-        onSelectRoom={r => setScreen({ name: 'room', room: r })}
+        onSelectRoom={r => tMode
+          ? setScreen({ name: 'room', room: r })
+          : setScreen({ name: 'escape3d', room: r })}
         onShowIntro={() => setScreen({ name: 'intro' })}
         onEnterCourtroom={r => setScreen({ name: 'courtroom', room: r })}
         onDashboard={isTeacher ? () => setScreen({ name: 'teacher-dashboard' }) : undefined}
         onLogout={handleLogout} />
+    );
+    if (screen.name === 'escape3d') return (
+      <EscapeRoom3D
+        room={screen.room}
+        progress={progress}
+        coins={progress.coins ?? 0}
+        onSelectLesson={l => setScreen({ name: 'lesson', room: screen.room, lesson: l, from3d: true })}
+        onBack={() => setScreen({ name: 'home' })} />
     );
     if (screen.name === 'room') return (
       <RoomScreen room={screen.room} progress={progress} teacherMode={tMode}
@@ -1370,15 +1382,17 @@ export default function App() {
     );
     if (screen.name === 'lesson') return (
       <LessonScreen room={screen.room} lesson={screen.lesson} progress={progress} teacherMode={tMode} auth={auth}
-        onBack={() => setScreen({ name: 'room', room: screen.room })}
-        onSelectCase={(c, idx) => setScreen({ name: 'case', room: screen.room, lesson: screen.lesson, caseData: c, caseIndex: idx })} />
+        onBack={() => screen.from3d
+          ? setScreen({ name: 'escape3d', room: screen.room })
+          : setScreen({ name: 'room', room: screen.room })}
+        onSelectCase={(c, idx) => setScreen({ name: 'case', room: screen.room, lesson: screen.lesson, caseData: c, caseIndex: idx, from3d: screen.from3d })} />
     );
     if (screen.name === 'case') return (
       <CaseScreen room={screen.room} lesson={screen.lesson} caseData={screen.caseData}
         caseIndex={screen.caseIndex} progress={progress} teacherMode={tMode} streak={sessionStreak}
         onComplete={(r, h) => completeCase(screen.caseData.id, screen.room.id, screen.room.order, r, h)}
         onBuyHint={handleBuyHint}
-        onBack={() => setScreen({ name: 'lesson', room: screen.room, lesson: screen.lesson })}
+        onBack={() => setScreen({ name: 'lesson', room: screen.room, lesson: screen.lesson, from3d: screen.from3d })}
         onProject={tMode ? () => setProjecting({ room: screen.room, lesson: screen.lesson, caseIndex: screen.caseIndex }) : undefined} />
     );
     return null;
